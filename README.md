@@ -33,7 +33,7 @@ Each decision lists why we made it and the main alternative we didn't pick.
 - **ESLint** with typescript-eslint, react-hooks and jsx-a11y. The starter has no linter, and these plugins catch type, hook and accessibility mistakes while coding.
   *Not picked:* no linter, relying on code review only.
 - **Mobile end-to-end tests also run in WebKit** (iPhone SE presets at 375px and 320px). Most customers are on phones, many on iPhone, and Safari has its own behavior around `<dialog>` and focus, which the skip confirmation relies on. Desktop runs in Chromium only.
-  *Limitation:* Playwright's WebKit is an emulation on a desktop OS, not iOS Safari on a real iPhone, which this project wasn't tested on.
+  *Limitation:* Playwright's WebKit is an emulation on a desktop OS, not iOS Safari on a real iPhone, which this project wasn't tested on. Safari's Tab key skips links by default (a user setting turns it on), so the test for the reviews link's focus ring runs only in Chromium; every other keyboard test runs in WebKit too.
   *Not picked:* Chromium-only mobile tests, which would never exercise Safari's engine.
 - **The Part B visual check compares only the buy box**, not the full window. The app's nav bar (how reviewers switch parts) stays, and the box's horizontal placement (64px from the left, 1072px wide) is asserted separately. Element-level comparison is the usual recommendation when one component is under test. Text anti-aliasing differs between operating systems, so the check allows a small per-pixel tolerance and a maximum share of differing pixels, and saves our render, the reference crop and a diff image for review.
   *Not picked:* hiding the nav on Part B so the full window matches, which would shape the app around the test.
@@ -71,8 +71,31 @@ Each decision lists why we made it and the main alternative we didn't pick.
   *Not picked:* no maximum, which allows accidental bulk orders.
 - **The "2,316 reviews" link points to `#reviews`**, the usual anchor for a reviews section. The reviews section itself is out of scope for this test.
   *Not picked:* rendering it as plain text, which loses the expected path to reviews.
-- **Below 1200px the layout stacks**: photo on top, details below, like a typical mobile product page. The exact breakpoint is chosen during the Part B build.
-  *Not picked:* scaling the two-column layout down, which gets cramped on phones.
+- **Below 1024px the layout stacks**: photo on top, details below, like a typical mobile product page. The breakpoint comes from the content, not from device widths: the subscribe row needs about 420px, and at 1024px the details column is 427px with every row still on one line. From 1024 to 1199px the gutters and column gap are 32px and 40px; from 1200px they are the reference's 64px. Checked with no horizontal overflow at 320, 375, 768, 1023, 1024, 1100, 1199, 1200 and 1440px.
+  *Not picked:* stacking only below 1200px, which would show a stretched single column on small laptops and tablets in landscape; or scaling the two columns down to phone widths, which gets cramped.
+- **At very narrow widths, controls wrap instead of squeezing.** Below about 330px the Add to cart button moves to its own full-width row rather than breaking "Add to cart · $25.46" over two lines, and the frequency select moves under its label. Below 1024px the select is 44px tall and the reviews link has a 44px tall hit area, our mobile target; at 1200px the select keeps the reference's 33px.
+  *Not picked:* a smaller font for the button on phones, which hurts legibility of the main action.
+- **The selected option is drawn with a 1px border plus a 1px inset ring**, so it looks like the reference's 2px border while the content stays exactly where it was. Switching options never shifts the layout.
+  *Not picked:* a real 2px border, which moves the content by 1px on every change.
+- **Native controls, styled:** a `<fieldset>` of real radio inputs (so a radio group is one Tab stop and arrow keys change the choice) and a native `<select>` (the platform picker on phones).
+  *Not picked:* custom ARIA radio cards and listboxes, which re-implement keyboard and screen reader behavior the browser already provides.
+- **Radios show their focus ring on any focus, not only `:focus-visible`.** In WebKit, `:focus-visible` stops matching once arrow keys move between radios, so Safari keyboard users lost the ring; our WebKit tests caught it. The cost is a ring after a mouse click on a radio in other browsers.
+  *Not picked:* `:focus-visible` everywhere, which fails WCAG 2.4.7 in Safari.
+- **The visual check allows 1.5% differing pixels.** The finished build measures 1.25% in Chromium on Windows, and that remainder is glyph rasterization and photo resampling (the reference was most likely rendered on macOS). Every row was also measured to within 1px of the reference during the build.
+  *Not picked:* a 0% target, which no cross-platform render can reach.
+- **Three reference colors are darkened slightly to meet WCAG 2.2 AA contrast.** Each is the smallest same-hue darkening that passes, with a small margin:
+
+  | Element | Reference | Ratio | Ours | Ratio |
+  |---|---|---|---|---|
+  | Eyebrow, reviews link, fine print (text, needs 4.5:1) | `#6b7a70` | 4.27 | `#647269` | 4.77 |
+  | Compare price $29.95 (text, needs 4.5:1) | `#8a948e` | 2.87 | `#647269` | 4.64 |
+  | Unselected radio ring (non-text, needs 3:1) | `#9aa59e` | 2.55 | `#849189` | 3.29 |
+
+  The compare price is struck through but still carries real information (the saving), and WCAG only exempts incidental or disabled text. The radio ring is what identifies the control and its state.
+  *Kept as designed:* the light borders on the option cards, the frequency select and the quantity stepper (1.3 to 1.5:1). WCAG 1.4.11 asks for 3:1 only on the visual information needed to identify a control, and here other cues do that: the radio and its label, the select's chevron (7.8:1) and the stepper's minus and plus signs (7.8:1). The stars (2.2:1) are decorative, because the "4.8" next to them and the accessible name carry the rating, so they are hidden from assistive technology.
+  *Not picked:* the exact reference colors, which would ship known AA failures.
+- **Focus indicators are a 2px brand-green outline with a 2px offset**, so the ring always sits on the surface around a control: 10.95:1 on the page, 11.6:1 on white and 10.64:1 on the selected card. On the dark Add to cart button the offset keeps the ring on the page background rather than green on green. The reference shows no focus state, so this is our design.
+  *Not picked:* the browser's default focus ring, which differs between browsers and isn't guaranteed to reach 3:1 on every background.
 - **The rating has the accessible name "Rated 4.8 out of 5"**, so screen readers get the value rather than five star icons.
 - **The fine print is built from the current selection** by our own function, because `copy.finePrint` hardcodes "30 days" and "$25.46". The frequency comes from `copy.subscribe.frequencyOptions` and the price from `copy.subscribe.priceCents`, so only the sentence frame is ours. A unit test checks that the default selection (30 days, quantity 1) produces exactly `copy.finePrint`, so the two can't drift apart unnoticed.
   *Not picked:* turning `copy.finePrint` into a function in `copy.ts`. One source, but it rewrites a file the brief provides.

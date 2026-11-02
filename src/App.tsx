@@ -10,7 +10,7 @@ export function App() {
         <a href="?part=a&fixture=active">Part A: Subscription page</a>
         <a href="?part=b">Part B: Buy box</a>
       </nav>
-      {part === "a" ? <SubscriptionCard /> : <BuyBox />}
+      <main>{part === "a" ? <SubscriptionCard /> : <BuyBox />}</main>
     </>
   );
 }

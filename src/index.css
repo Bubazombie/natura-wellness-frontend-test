@@ -24,4 +24,31 @@
   --color-badge: #f6e7c4;
   --color-badge-ink: #7a5a12;
   --color-star: #d8a23a;
+
+  /* Sizes that Tailwind's default scale (12, 14, 16, 18px...) doesn't have. */
+  --text-micro: 0.6875rem;
+  --text-caption: 0.8125rem;
+  --text-display: 2.6875rem;
+
+  --tracking-caps: 0.08em;
+
+  /* The Part B reference width, where the layout reaches its full 64px gutters. */
+  --breakpoint-wide: 75rem;
+
+  --radius-card: 1.25rem;
+  --radius-option: 0.875rem;
+}
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+  }
+
+  /* One focus style everywhere: brand green, offset so it sits on the surface around the control. */
+  :focus-visible,
+  /* WebKit stops matching :focus-visible once arrow keys move between radios, which hides the ring
+     from Safari keyboard users, so radios show it on any focus. */
+  input[type="radio"]:focus {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
 }
