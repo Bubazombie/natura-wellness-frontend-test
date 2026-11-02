@@ -2,7 +2,7 @@
 
 Two builds for the fictional Natura Wellness supplement store; the brief is in `INSTRUCTIONS.md`.
 
-**Live:** _link to be added after deploying_
+**Live:** https://natura-wellness-frontend-test-gamma.vercel.app/
 
 ## What's built
 
