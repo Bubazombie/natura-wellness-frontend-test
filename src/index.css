@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+/* Measured from public/reference/buy-box.png. Where the reference fails WCAG 2.2 AA, the value is the
+   smallest same-hue darkening that passes, and the original is noted. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+
+  --color-page: #fbf8f3;
+  --color-surface: #ffffff;
+  --color-surface-selected: #f3f6f2;
+  --color-line: #e7e1d6;
+  --color-line-option: #e1dbcf;
+  --color-line-control: #cfd6d0;
+
+  --color-brand: #17402f;
+  --color-ink: #1c2420;
+  --color-ink-muted: #4a5550;
+  /* Reference #6b7a70 (4.27:1 on the page) and #8a948e for the compare price (2.87:1). */
+  --color-ink-subtle: #647269;
+  /* Reference #9aa59e (2.55:1); a radio's ring needs 3:1 to identify the control. */
+  --color-control: #849189;
+
+  --color-badge: #f6e7c4;
+  --color-badge-ink: #7a5a12;
+  --color-star: #d8a23a;
+}

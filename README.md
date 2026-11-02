@@ -32,6 +32,11 @@ Each decision lists why we made it and the main alternative we didn't pick.
   *Not picked:* judging the match by eye only. It's faster, but it misses small spacing and color differences.
 - **ESLint** with typescript-eslint, react-hooks and jsx-a11y. The starter has no linter, and these plugins catch type, hook and accessibility mistakes while coding.
   *Not picked:* no linter, relying on code review only.
+- **Mobile end-to-end tests also run in WebKit** (iPhone SE presets at 375px and 320px). Most customers are on phones, many on iPhone, and Safari has its own behavior around `<dialog>` and focus, which the skip confirmation relies on. Desktop runs in Chromium only.
+  *Limitation:* Playwright's WebKit is an emulation on a desktop OS, not iOS Safari on a real iPhone, which this project wasn't tested on.
+  *Not picked:* Chromium-only mobile tests, which would never exercise Safari's engine.
+- **The Part B visual check compares only the buy box**, not the full window. The app's nav bar (how reviewers switch parts) stays, and the box's horizontal placement (64px from the left, 1072px wide) is asserted separately. Element-level comparison is the usual recommendation when one component is under test. Text anti-aliasing differs between operating systems, so the check allows a small per-pixel tolerance and a maximum share of differing pixels, and saves our render, the reference crop and a diff image for review.
+  *Not picked:* hiding the nav on Part B so the full window matches, which would shape the app around the test.
 - **ESLint 9, not 10.** eslint-plugin-jsx-a11y (6.10.2, the latest) supports ESLint up to 9 only.
   *Not picked:* ESLint 10 without jsx-a11y, which loses the accessibility lint rules.
 - **The starter's Vite 7 and TypeScript 5.8 stay as they are.** Every tool we added supports them, and upgrading would add changes the brief doesn't need.

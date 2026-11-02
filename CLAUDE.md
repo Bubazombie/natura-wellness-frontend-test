@@ -48,7 +48,7 @@
 
 ## Design process
 - Part A: build the UI with fixture data first, review it at 375px and desktop, iterate until the user approves, and only then wire the API and state.
-- Part B: verify with Playwright at 1200x780, deviceScaleFactor 2, and a pixelmatch diff against the reference.
+- Part B: verify with `npx playwright test --project=visual` (1200x780, deviceScaleFactor 2, pixelmatch against the reference). Review the saved diff.png, not only the percentage.
 
 ## Git
 - Branch main. Small commits, one logical change each, only after verification passes.
