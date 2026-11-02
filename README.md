@@ -64,6 +64,46 @@ Each decision lists why we made it and the main alternative we didn't pick.
 - **On phones the links read "Part A" and "Part B"**, so the header stays on one row down to 320px instead of stacking into three. Each link's `aria-label` keeps the full name ("Part A: Subscription page") at every width, and starts with the visible text, as WCAG 2.5.3 (Label in Name) asks. An end-to-end test checks one row and no sideways scroll from 320 to 1440px.
   *Not picked:* visually hidden text for the rest of the name, which made browsers compute "Part A : Subscription page" with a stray space; or letting the links wrap, which took 137px of a 320px phone screen.
 
+### Part A: subscription page
+
+- **One retention feature: a cancel flow that asks why and offers one alternative for that reason.** Vendor data (Skio) puts reason-based save flows at 15 to 30% of cancellation attempts, against under 5% for a single generic offer. The offers, all simulated in local state except skip:
+
+  | Reason (share of cancellations) | Offer |
+  |---|---|
+  | Too much product left (38%) | Skip the next delivery first (the one change the API supports), or deliver less often (every 60 or 90 days) |
+  | It costs too much (24%) | Lower the cost: fewer units or less frequent delivery, with the new price shown before choosing |
+  | Trying a different product (15%) | Swap one product for another from the catalog: one tap per "Swap Multivitamin for Magnesium", so the customer picks which product to replace |
+  | Didn't see results (12%), other (11%) | Pause for 1, 2 or 3 months |
+
+  Cancelling takes two taps at minimum (Cancel, then Cancel subscription on the first step); giving a reason adds one step, the matching offer, which also has Cancel subscription. The reason is optional. When it is done, the page confirms what happened and offers Restart, with no extra "are you sure?" step. The confirmation is the cancelled card itself ("Your subscription is cancelled. You cancelled today. You won't be charged again."), not a separate notice repeating the same words; when the dialog closes, focus moves to that card's heading, so screen reader users hear it too.
+  *Not picked:* a success notice above the cancelled card, which said "Your subscription is cancelled" twice.
+  *Not picked:* only a delivery frequency control on the page. Simpler, and the same control is on the page anyway, but it does nothing for the other 62% at the moment they decide to leave.
+- **Skipping asks for confirmation in a dialog that states the consequence**: "Skip your Nov 8 delivery?", "You won't be charged $101.87 on Nov 8. Your next delivery will be Dec 8.", with the buttons "Skip Nov 8 delivery" and "Keep it", and focus starting on "Keep it". NN/g recommends confirming only consequential actions, restating the consequence and naming the action on the buttons. The API has no way to undo a skip, which is why this confirms instead of offering undo. While the skip is in flight the dialog can't be closed: "Keep it" is unavailable and Escape is ignored until the result is in, because closing it would look like keeping the delivery while the skip still goes through.
+  *Not picked:* an undo toast that sends the skip after a delay, which can lose the skip if the page closes; or a button that turns into "Confirm" in place, where a double tap is exactly the accidental skip the brief wants to prevent.
+- **Every state says what happened and what to do next:**
+
+  | State | Shown | Actions |
+  |---|---|---|
+  | Loading (up to 2.5s) | A placeholder of the page, announced as loading | None |
+  | Active | Next delivery date and amount, items, frequency | Skip, change frequency, pause, cancel |
+  | Paused | "Paused" badge, resume date, no charge | Resume now, cancel |
+  | Cancelled | Cancellation date and what was in it | Restart |
+  | Load error (500) | "We couldn't load your subscription. Nothing has changed." | Try again, contact support |
+  | Not found (404) | "We couldn't find a subscription on your account." | Contact support |
+  | 409 on skip | The dialog updates with the latest details and asks again | Skip or keep it; after two conflicts in a row, contact support |
+  | Other skip error | "We couldn't skip your delivery. Nothing changed." in the dialog | Try again |
+
+  The support address is `help@natura-wellness.example`. The `.example` domain is reserved for documentation, so it can't be mistaken for a real address.
+  *Not picked:* on a 409, closing the dialog and showing a notice on the page, which makes the customer start the skip again.
+- **The swap offer lists each possible swap as one choice naming both products**, rather than first asking which product to replace. With only a few combinations that is faster and clearer (NN/g's progressive disclosure keeps a small set of choices on the first screen). It never offers a product already in the subscription, or a bundle that contains the product being replaced (the bundle's contents are recorded in our own content file, because the catalog has no such field). If nothing is left to swap to, the flow offers a pause instead.
+  *Not picked:* a two-step "which product? then which replacement?" flow, which adds a step for no gain at this size; or always swapping the first product, which chose for the customer.
+- **At 375px the page leads with the next delivery**: heading and status (the badge always sits under the title on phones, because "Cancelled" doesn't fit beside it and the badge shouldn't move between states), then a card with the date, the amount and the Skip button, then the items, then delivery frequency, then pause and cancel. Customers come to check or change the next delivery; cancel is last but always visible. Item prices are list prices, with the 15% saving as its own line and the server's total, so the lines always add up (rounding each discounted line separately would be off by a cent).
+  *Not picked:* leading with the item list, which pushes the date and amount below the fold.
+- **Buttons that are busy or not available yet use `aria-disabled`, not `disabled`**, like the quantity buttons in Part B: they stay in the Tab order, are announced as unavailable and ignore presses. A button that isn't available yet also looks muted (Continue before a reason is chosen); a busy one keeps its normal look, because its action is happening. Every button is at least 44 by 44px, including the low-emphasis text buttons such as Cancel subscription.
+  *Not picked:* the `disabled` attribute, which hides the control from keyboard users while it waits.
+- **Dialogs close with a labelled × button ("Close and keep my subscription") where focus starts**, and with Escape. Focus always starts on the choice that changes nothing, and returns to the button that opened the dialog.
+  *Not picked:* a text link beside the title, which squeezed the titles into narrow lines on phones.
+
 ### Part B: buy box
 
 - **Subscribe is selected by default**, as in the reference.
