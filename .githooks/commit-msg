@@ -1,0 +1,17 @@
+#!/bin/sh
+# Strips AI attribution lines (such as "Co-Authored-By: Claude ...") from commit messages.
+# Only known attribution keys are matched, and never on the subject line, so legitimate
+# mentions like the CLAUDE.md file name are left alone.
+
+msg_file="$1"
+tmp_file="$msg_file.tmp"
+
+awk '
+  NR > 1 && tolower($0) ~ /^(co-authored-by|generated-by|assisted-by|claude-session):.*(claude|anthropic)/ { next }
+  NR > 1 && tolower($0) ~ /generated with.*(claude|anthropic)/ { next }
+  { lines[++n] = $0 }
+  END {
+    while (n > 0 && lines[n] ~ /^[[:space:]]*$/) n--
+    for (i = 1; i <= n; i++) print lines[i]
+  }
+' "$msg_file" > "$tmp_file" && mv "$tmp_file" "$msg_file"
