@@ -1,5 +1,6 @@
 import { Button } from "./Button";
 import { SUPPORT_EMAIL } from "./content";
+import { cardClass } from "./styles";
 
 const block = "rounded-lg bg-line motion-safe:animate-pulse";
 
@@ -10,13 +11,13 @@ export function LoadingView() {
       <span className="sr-only">Loading your subscription</span>
       <div aria-hidden="true" className="space-y-6">
         <div className={`${block} h-9 w-56`} />
-        <div className="space-y-3 rounded-card border border-line-option bg-surface p-5 sm:p-6">
+        <div className={`space-y-3 ${cardClass}`}>
           <div className={`${block} h-3 w-28`} />
           <div className={`${block} h-8 w-64 max-w-full`} />
           <div className={`${block} h-4 w-72 max-w-full`} />
           <div className={`${block} mt-2 h-11 w-full sm:w-44`} />
         </div>
-        <div className="space-y-4 rounded-card border border-line-option bg-surface p-5 sm:p-6">
+        <div className={`space-y-4 ${cardClass}`}>
           {[0, 1].map((row) => (
             <div key={row} className="flex items-center gap-4">
               <div className={`${block} size-14`} />
@@ -52,7 +53,7 @@ const failures: Record<LoadFailure, { title: string; body: string; canRetry: boo
 export function LoadErrorView({ failure, onRetry }: LoadErrorViewProps) {
   const { title, body, canRetry } = failures[failure];
   return (
-    <div role="alert" className="rounded-card border border-line-option bg-surface p-5 sm:p-6">
+    <div role="alert" className={cardClass}>
       <h2 className="font-display text-2xl font-semibold text-ink">{title}</h2>
       <p className="mt-2 text-ink-muted">{body}</p>
       {canRetry && (

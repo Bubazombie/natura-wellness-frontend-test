@@ -58,7 +58,7 @@ describe("Dialog", () => {
     await expect.element(opener).toHaveFocus();
   });
 
-  it("ignores Escape and is marked busy while it isn't dismissible", async () => {
+  it("ignores Escape while it isn't dismissible, and stays open", async () => {
     const onClose = vi.fn();
     const screen = await render(<Harness onClose={onClose} dismissible={false} />);
 
@@ -66,7 +66,9 @@ describe("Dialog", () => {
     await userEvent.keyboard("{Escape}");
 
     expect(onClose).not.toHaveBeenCalled();
-    await expect.element(screen.getByRole("dialog")).toHaveAttribute("aria-busy", "true");
+    await expect.element(screen.getByRole("dialog")).toBeVisible();
+    // aria-busy would make some screen readers hold back the progress message inside the dialog.
+    await expect.element(screen.getByRole("dialog")).not.toHaveAttribute("aria-busy");
   });
 
   it("closes when its open prop turns false", async () => {

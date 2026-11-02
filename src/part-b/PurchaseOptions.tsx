@@ -53,7 +53,7 @@ export function PurchaseOptions({ option, onOptionChange, frequency, onFrequency
         }
         details={
           <div className="pr-5 pb-4 pl-13">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
               <label htmlFor={frequencyId} className="text-sm whitespace-nowrap text-ink-muted">
                 {copy.subscribe.frequencyLabel}
               </label>

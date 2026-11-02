@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { radioInputClass } from "../ui/styles";
 
 interface OptionCardProps<T extends string> {
   name: string;
@@ -31,7 +32,7 @@ export function OptionCard<T extends string>({ name, value, checked, onSelect, l
           onChange={() => {
             onSelect(value);
           }}
-          className="size-5 shrink-0 cursor-pointer appearance-none rounded-full border-[1.5px] border-control bg-surface checked:border-2 checked:border-brand checked:bg-brand checked:shadow-[inset_0_0_0_3px_var(--color-surface)]"
+          className={radioInputClass}
         />
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">{label}</span>
         <span className="text-right">{price}</span>

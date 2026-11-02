@@ -11,7 +11,7 @@ const BOX = { x: 64, y: 56, width: 1072 };
 // Per-pixel color tolerance (0 to 1). Text anti-aliasing differs between operating systems, so a
 // perfect 0 isn't reachable; layout, size and color errors still show up far above this.
 const PIXEL_THRESHOLD = 0.1;
-// The finished build measures 1.25% in Chromium on Windows, almost all glyph rasterization and photo
+// The finished build measures 0.98% in Chromium on Windows, almost all glyph rasterization and photo
 // resampling (the reference was likely rendered on macOS). Every row was also checked to within 1px.
 const MAX_MISMATCH_RATIO = 0.015;
 

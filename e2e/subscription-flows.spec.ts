@@ -110,3 +110,15 @@ test("cancelling confirms on the card and moves focus there; restarting makes it
   await expect(page.getByRole("region", { name: "Next delivery", exact: true })).toBeVisible();
   await expect(page.getByText("Active", { exact: true })).toBeVisible();
 });
+
+test("after accepting an offer in the cancel flow, its confirmation is on screen, even on a phone", async ({ page }) => {
+  await openActive(page, "never");
+
+  await page.getByRole("main").getByRole("button", { name: "Cancel subscription" }).click();
+  await page.getByRole("radio", { name: "It costs too much" }).check();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: /^Get 1 Multivitamin instead of 2/ }).click();
+
+  const confirmation = page.getByText("Done. You'll get 1 of Multivitamin, 30 tablets in each delivery", { exact: false });
+  await expect(confirmation).toBeInViewport();
+});

@@ -8,6 +8,7 @@ import { PageHeader } from "./PageHeader";
 import { PriceSummary } from "./PriceSummary";
 import { StatusSummary } from "./StatusSummary";
 import { priceSummary } from "./summary";
+import { cardClass } from "./styles";
 
 export interface SubscriptionActions {
   onSkip: () => void;
@@ -26,14 +27,17 @@ interface SubscriptionPageProps extends SubscriptionActions {
   announcement?: string;
   /** The summary card's heading, which receives focus after a status change. */
   summaryHeadingRef?: Ref<HTMLHeadingElement>;
+  /** The notice's message, which receives focus after a change made in a dialog. */
+  noticeRef?: Ref<HTMLParagraphElement>;
+  /** Confirms a frequency change right under the select it was made with. */
+  frequencyConfirmation?: string | null;
 }
 
-const card = "rounded-card border border-line-option bg-surface p-5 sm:p-6";
 const sectionTitle = "font-display text-xl font-semibold text-ink";
 const itemsTitle = { active: "In your next delivery", paused: "In your subscription", cancelled: "What you had" } as const;
 
 /** The page for one subscription, in the order customers need it: what's next, what's in it, settings. */
-export function SubscriptionPage({ subscription, notice, announcement, summaryHeadingRef, ...actions }: SubscriptionPageProps) {
+export function SubscriptionPage({ subscription, notice, announcement, summaryHeadingRef, noticeRef, frequencyConfirmation, ...actions }: SubscriptionPageProps) {
   const itemsId = useId();
   const manageId = useId();
   const { status } = subscription;
@@ -41,7 +45,7 @@ export function SubscriptionPage({ subscription, notice, announcement, summaryHe
   return (
     <div>
       <PageHeader status={status} />
-      <Notice>{notice}</Notice>
+      <Notice messageRef={noticeRef}>{notice}</Notice>
       <p role="status" className="sr-only">
         {announcement}
       </p>
@@ -55,7 +59,7 @@ export function SubscriptionPage({ subscription, notice, announcement, summaryHe
           headingRef={summaryHeadingRef}
         />
 
-        <section aria-labelledby={itemsId} className={card}>
+        <section aria-labelledby={itemsId} className={cardClass}>
           <h2 id={itemsId} className={`${sectionTitle} mb-4`}>
             {itemsTitle[status]}
           </h2>
@@ -64,11 +68,11 @@ export function SubscriptionPage({ subscription, notice, announcement, summaryHe
         </section>
 
         {status !== "cancelled" && (
-          <section aria-labelledby={manageId} className={`${card} space-y-5`}>
+          <section aria-labelledby={manageId} className={`${cardClass} space-y-5`}>
             <h2 id={manageId} className={sectionTitle}>
               Manage your subscription
             </h2>
-            <FrequencySetting intervalDays={subscription.intervalDays} onChange={actions.onFrequencyChange} />
+            <FrequencySetting intervalDays={subscription.intervalDays} onChange={actions.onFrequencyChange} confirmation={frequencyConfirmation} />
             <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4">
               {status === "active" && (
                 <Button variant="quiet" onClick={actions.onPause}>

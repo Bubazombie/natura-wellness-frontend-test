@@ -39,7 +39,7 @@ describe("CancelFlow", () => {
 
     await screen.getByRole("button", { name: "Cancel subscription" }).click();
 
-    expect(onCancelSubscription).toHaveBeenCalledWith(null);
+    expect(onCancelSubscription).toHaveBeenCalledOnce();
   });
 
   it("needs a reason before Continue does anything, and looks unavailable until then", async () => {
@@ -125,7 +125,7 @@ describe("CancelFlow", () => {
     expect(onPause).toHaveBeenCalledWith(1);
   });
 
-  it("can still cancel from an offer, passing the reason, or go back to change it", async () => {
+  it("can still cancel from an offer, or go back to change the reason", async () => {
     const { screen, chooseReason, onCancelSubscription } = await renderFlow();
 
     await chooseReason("It costs too much");
@@ -134,16 +134,47 @@ describe("CancelFlow", () => {
     await screen.getByRole("button", { name: "Continue" }).click();
     await screen.getByRole("button", { name: "Cancel subscription" }).click();
 
-    expect(onCancelSubscription).toHaveBeenCalledWith("too-expensive");
+    expect(onCancelSubscription).toHaveBeenCalledOnce();
   });
 
-  it("closing keeps the subscription and starts over next time", async () => {
-    const { screen, chooseReason, onClose } = await renderFlow();
+  it("closing keeps the subscription, and opening it again starts over at the reason", async () => {
+    const { screen, subscription, chooseReason, onClose, ...actions } = await renderFlow();
 
     await chooseReason("It costs too much");
     await screen.getByRole("button", { name: "Close and keep my subscription" }).click();
-
     expect(onClose).toHaveBeenCalledOnce();
+
+    await screen.rerender(<CancelFlow open={false} subscription={subscription} catalog={catalog} onClose={onClose} {...actions} />);
+    await screen.rerender(<CancelFlow open subscription={subscription} catalog={catalog} onClose={onClose} {...actions} />);
+
+    await expect.element(screen.getByRole("dialog", { name: "Before you go" })).toBeVisible();
+    await expect.element(screen.getByRole("radio", { name: "It costs too much" })).not.toBeChecked();
+  });
+
+  it("only offers frequencies the page has, and only ones that mean less often", async () => {
+    const at90 = await renderFlow({ ...fixtures.active(), intervalDays: 90 });
+    await at90.chooseReason("I have too much product left");
+    await expect.element(at90.screen.getByRole("button", { name: /^Deliver every/ })).not.toBeInTheDocument();
+    await at90.screen.unmount();
+
+    const at60 = await renderFlow({ ...fixtures.active(), intervalDays: 60 });
+    await at60.chooseReason("It costs too much");
+    await at60.screen.getByRole("button", { name: /^Deliver every 90 days/ }).click();
+    expect(at60.onFrequencyChange).toHaveBeenCalledWith(90);
+    await expect.element(at60.screen.getByRole("button", { name: /^Deliver every 120 days/ })).not.toBeInTheDocument();
+  });
+
+  it("an already paused subscription is offered a longer pause, only with lengths that end later", async () => {
+    // Paused for about 45 days, so pausing 1 month from today would end sooner, not later.
+    const pausedUntil = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString();
+    const { screen, chooseReason, onPause } = await renderFlow({ ...fixtures.paused(), pausedUntil });
+
+    await chooseReason("I didn't see results");
+
+    await expect.element(screen.getByRole("dialog", { name: "Want a longer break instead?" })).toBeVisible();
+    await expect.element(screen.getByRole("button", { name: "Pause for 1 month" })).not.toBeInTheDocument();
+    await screen.getByRole("button", { name: "Pause for 2 months" }).click();
+    expect(onPause).toHaveBeenCalledWith(2);
   });
 
   it("has no WCAG 2.2 AA violations on the reason step or any offer", async () => {

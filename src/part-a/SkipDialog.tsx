@@ -52,6 +52,11 @@ export function SkipDialog({ open, status, nextChargeAt, intervalDays, totalCent
           We couldn't skip your delivery. Nothing changed. Please try again.
         </p>
       )}
+      {/* Focus stays on Keep it while the request runs, so the progress is announced here instead of
+          relying on the confirm button's changing label. */}
+      <p role="status" className="sr-only">
+        {pending ? "Skipping your delivery..." : ""}
+      </p>
       <p className="mt-3 text-ink-muted">
         You won't be charged {formatPrice(totalCents)} on {date}. Your next delivery will be {formatShortDate(dateAfterSkip(nextChargeAt, intervalDays))}.
       </p>

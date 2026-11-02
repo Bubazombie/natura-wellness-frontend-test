@@ -4,6 +4,7 @@ import { formatShortDate, formatWeekdayDate, formatWhen } from "../lib/dates";
 import { formatPrice } from "../lib/money";
 import { Button } from "./Button";
 import { priceSummary } from "./summary";
+import { cardClass } from "./styles";
 
 interface StatusSummaryProps {
   subscription: Subscription;
@@ -14,7 +15,6 @@ interface StatusSummaryProps {
   headingRef?: Ref<HTMLHeadingElement>;
 }
 
-const cardClass = "rounded-card border border-line-option bg-surface p-5 sm:p-6";
 const eyebrowClass = "text-caption font-semibold tracking-caps text-ink-subtle uppercase";
 
 /** The answer to "what happens next", which is different for each status. */
@@ -32,7 +32,7 @@ export function StatusSummary({ subscription, onSkip, onResume, onRestart, headi
         <p className="mt-2 font-display text-3xl font-semibold text-brand">{formatWeekdayDate(nextChargeAt)}</p>
         <p className="mt-2 text-ink-muted">
           You'll be charged <strong className="font-semibold text-ink">{formatPrice(totalCents)}</strong> on {formatShortDate(nextChargeAt)} for{" "}
-          {itemCount} items.
+          {itemCount} {itemCount === 1 ? "item" : "items"}.
         </p>
         <Button onClick={onSkip} className="mt-5 w-full sm:w-auto">
           Skip this delivery
@@ -48,7 +48,7 @@ export function StatusSummary({ subscription, onSkip, onResume, onRestart, headi
           Your deliveries are paused
         </h2>
         <p className="mt-2 text-ink-muted">
-          {pausedUntil ? `They resume on ${formatWeekdayDate(pausedUntil)}. ` : ""}You won't be charged until then.
+          {pausedUntil ? `They resume on ${formatWeekdayDate(pausedUntil)}. You won't be charged until then.` : "You won't be charged while they are paused."}
         </p>
         <Button onClick={onResume} className="mt-5 w-full sm:w-auto">
           Resume now

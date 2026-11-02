@@ -45,7 +45,8 @@ describe("SkipDialog", () => {
     const keep = screen.getByRole("button", { name: "Keep it" });
 
     await expect.element(keep).toHaveAttribute("aria-disabled", "true");
-    await expect.element(dialog).toHaveAttribute("aria-busy", "true");
+    // Focus stays on Keep it, so the progress is announced in a status region, not by the button label.
+    await expect.element(screen.getByRole("status")).toHaveTextContent("Skipping your delivery...");
     await keep.click({ force: true });
     await userEvent.keyboard("{Escape}");
 

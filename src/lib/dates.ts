@@ -1,6 +1,15 @@
 // Dates are shown in the customer's own timezone, in US English to match the store's currency.
 const LOCALE = "en-US";
 
+export const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The same day of the month, the given number of calendar months later. */
+export function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
+
 const weekdayDate = new Intl.DateTimeFormat(LOCALE, { weekday: "long", month: "long", day: "numeric" });
 const shortDate = new Intl.DateTimeFormat(LOCALE, { month: "short", day: "numeric" });
 const fullDate = new Intl.DateTimeFormat(LOCALE, { month: "long", day: "numeric", year: "numeric" });

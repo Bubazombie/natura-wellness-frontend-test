@@ -32,7 +32,6 @@ export function Dialog({ open, onClose, titleId, initialFocus, dismissible = tru
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      aria-busy={!dismissible || undefined}
       onCancel={(event) => {
         // Escape: let React's state decide, so the dialog and the state never disagree. A native
         // modal dialog doesn't close on a backdrop click, so Escape is the only built-in way out.

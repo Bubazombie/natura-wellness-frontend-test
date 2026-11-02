@@ -1,11 +1,12 @@
 import { useId, useRef, useState } from "react";
 import { totalAfterDiscount } from "../api/fixtures";
 import type { CatalogProduct, Subscription } from "../api/types";
-import { formatShortDate } from "../lib/dates";
+import { addMonths, formatShortDate, formatWeekdayDate } from "../lib/dates";
 import { formatPrice } from "../lib/money";
 import { CloseIcon } from "../ui/icons";
+import { radioInputClass } from "../ui/styles";
 import { Button } from "./Button";
-import { BUNDLE_CONTENTS, CANCEL_REASONS, type CancelReason } from "./content";
+import { BUNDLE_CONTENTS, CANCEL_REASONS, FREQUENCY_OPTIONS_DAYS, PAUSE_OPTIONS_MONTHS, type CancelReason } from "./content";
 import { Dialog } from "./Dialog";
 import { OfferOption } from "./OfferOption";
 import { PauseOptions } from "./PauseOptions";
@@ -18,7 +19,7 @@ export interface CancelFlowActions {
   onQuantityChange: (sku: string, quantity: number) => void;
   onSwap: (fromSku: string, to: CatalogProduct) => void;
   onPause: (months: number) => void;
-  onCancelSubscription: (reason: CancelReason | null) => void;
+  onCancelSubscription: () => void;
 }
 
 interface CancelFlowProps extends CancelFlowActions {
@@ -28,23 +29,36 @@ interface CancelFlowProps extends CancelFlowActions {
   onClose: () => void;
 }
 
-const LONGER_INTERVALS_DAYS = [60, 90];
-
-type OfferKind = "slow-down" | "spend-less" | "swap" | "pause";
+type OfferKind = "slow-down" | "spend-less" | "swap" | "pause" | "longer-pause";
 
 const offerTitle: Record<OfferKind, string> = {
   "slow-down": "Have too much on hand?",
   "spend-less": "Want to spend less?",
   swap: "Try something else of ours?",
   pause: "Want to take a break instead?",
+  "longer-pause": "Want a longer break instead?",
 };
 
-/** The one offer for a reason. A swap needs something to swap to; without one, a pause is offered. */
-function offerKind(reason: CancelReason, canSwap: boolean): OfferKind {
+/**
+ * The one offer for a reason. A swap needs something to swap to; without one, a pause is offered.
+ * A subscription that is already paused is offered a longer pause rather than a pause.
+ */
+function offerKind(reason: CancelReason, canSwap: boolean, isPaused: boolean): OfferKind {
   if (reason === "too-much-product") return "slow-down";
   if (reason === "too-expensive") return "spend-less";
   if (reason === "different-product" && canSwap) return "swap";
-  return "pause";
+  return isPaused ? "longer-pause" : "pause";
+}
+
+/** Only frequencies the page offers, and only ones that actually mean less often. */
+function longerFrequencies(intervalDays: number): number[] {
+  return FREQUENCY_OPTIONS_DAYS.filter((days) => days > intervalDays);
+}
+
+/** Pause lengths that would end later than the current pause (months counted from today). */
+function longerPauses(pausedUntil: string | null, now: Date): number[] {
+  const until = pausedUntil ? Date.parse(pausedUntil) : now.getTime();
+  return PAUSE_OPTIONS_MONTHS.filter((months) => addMonths(now, months).getTime() > until);
 }
 
 /**
@@ -57,7 +71,7 @@ export function CancelFlow({ open, subscription, catalog, onClose, ...actions }:
   const [reason, setReason] = useState<CancelReason | null>(null);
   const [step, setStep] = useState<"reason" | "offer">("reason");
   const swaps = swapOptions(subscription.items, catalog, BUNDLE_CONTENTS);
-  const offer = step === "offer" && reason ? offerKind(reason, swaps.length > 0) : null;
+  const offer = step === "offer" && reason ? offerKind(reason, swaps.length > 0, subscription.status === "paused") : null;
 
   const close = () => {
     setStep("reason");
@@ -89,12 +103,7 @@ export function CancelFlow({ open, subscription, catalog, onClose, ...actions }:
       )}
 
       <div className="mt-6 flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <Button
-          variant="quiet"
-          onClick={() => {
-            actions.onCancelSubscription(reason);
-          }}
-        >
+        <Button variant="quiet" onClick={actions.onCancelSubscription}>
           Cancel subscription
         </Button>
         {offer ? (
@@ -140,7 +149,7 @@ function ReasonStep({ reason, onReasonChange }: { reason: CancelReason | null; o
               onChange={() => {
                 onReasonChange(id);
               }}
-              className="size-5 shrink-0 cursor-pointer appearance-none rounded-full border-[1.5px] border-control bg-surface checked:border-2 checked:border-brand checked:bg-brand checked:shadow-[inset_0_0_0_3px_var(--color-surface)]"
+              className={radioInputClass}
             />
             {label}
           </label>
@@ -178,7 +187,7 @@ function Offer({ kind, subscription, swaps, ...actions }: OfferProps) {
               onChoose={actions.onSkip}
             />
           )}
-          {LONGER_INTERVALS_DAYS.filter((days) => days !== intervalDays).map((days) => (
+          {longerFrequencies(intervalDays).map((days) => (
             <OfferOption
               key={days}
               label={`Deliver every ${String(days)} days`}
@@ -195,6 +204,7 @@ function Offer({ kind, subscription, swaps, ...actions }: OfferProps) {
 
   if (kind === "spend-less") {
     const reducible = items.filter((item) => item.quantity > 1);
+    const lessOften = longerFrequencies(intervalDays).at(0);
     return (
       <>
         <p className="mt-3 text-ink-muted">You're already saving {discountPercent}%. You can also get less, or get it less often.</p>
@@ -212,13 +222,15 @@ function Offer({ kind, subscription, swaps, ...actions }: OfferProps) {
               />
             );
           })}
-          <OfferOption
-            label={`Deliver every ${String(intervalDays * 2)} days`}
-            detail="Half as often, same price per delivery"
-            onChoose={() => {
-              actions.onFrequencyChange(intervalDays * 2);
-            }}
-          />
+          {lessOften && (
+            <OfferOption
+              label={`Deliver every ${String(lessOften)} days`}
+              detail="Fewer deliveries, same price per delivery"
+              onChoose={() => {
+                actions.onFrequencyChange(lessOften);
+              }}
+            />
+          )}
         </div>
       </>
     );
@@ -242,6 +254,23 @@ function Offer({ kind, subscription, swaps, ...actions }: OfferProps) {
             />
           ))}
         </div>
+      </>
+    );
+  }
+
+  if (kind === "longer-pause") {
+    const options = longerPauses(subscription.pausedUntil, new Date());
+    return (
+      <>
+        <p className="mt-3 text-ink-muted">
+          {subscription.pausedUntil ? `Your deliveries resume on ${formatWeekdayDate(subscription.pausedUntil)}. ` : ""}
+          {options.length > 0 ? "You can keep them paused for longer instead, counted from today." : "You can still cancel below."}
+        </p>
+        {options.length > 0 && (
+          <div className="mt-5">
+            <PauseOptions options={options} onPause={actions.onPause} />
+          </div>
+        )}
       </>
     );
   }

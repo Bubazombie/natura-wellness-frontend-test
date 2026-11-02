@@ -60,3 +60,21 @@ describe("StatusSummary", () => {
     }
   });
 });
+
+describe("StatusSummary copy", () => {
+  const noop = { onSkip: () => undefined, onResume: () => undefined, onRestart: () => undefined };
+
+  it("says item, not items, for a single item", async () => {
+    const subscription = { ...fixtures.active(), items: [{ sku: "X", name: "X", quantity: 1, unitPriceCents: 1000, imageUrl: null }] };
+    const screen = await render(<StatusSummary subscription={subscription} {...noop} />);
+
+    await expect.element(screen.getByText(/for 1 item\.$/)).toBeVisible();
+  });
+
+  it("paused with no resume date: doesn't refer to a date it hasn't given", async () => {
+    const screen = await render(<StatusSummary subscription={{ ...fixtures.paused(), pausedUntil: null }} {...noop} />);
+
+    await expect.element(screen.getByText("You won't be charged while they are paused.")).toBeVisible();
+    await expect.element(screen.getByText(/until then/)).not.toBeInTheDocument();
+  });
+});

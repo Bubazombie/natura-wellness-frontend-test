@@ -33,3 +33,22 @@ describe("FrequencySetting", () => {
     await expectNoAxeViolations(screen.container);
   });
 });
+
+describe("FrequencySetting confirmation", () => {
+  it("confirms a change right under the select, in a status region that describes it", async () => {
+    const screen = await render(<FrequencySetting intervalDays={60} onChange={vi.fn()} confirmation="From now on, every 60 days." />);
+    const select = screen.getByRole("combobox", { name: "Delivery frequency" });
+
+    await expect.element(screen.getByRole("status")).toHaveTextContent("From now on, every 60 days.");
+    await expect.element(select).toHaveAccessibleDescription("From now on, every 60 days.");
+  });
+
+  it("keeps the status region rendered, with no space taken, when there is nothing to confirm", async () => {
+    const screen = await render(<FrequencySetting intervalDays={30} onChange={vi.fn()} />);
+    const region = screen.getByRole("status");
+
+    await expect.element(region).toBeInTheDocument();
+    expect(region.element().getBoundingClientRect().height).toBe(0);
+    expect(getComputedStyle(region.element()).display).not.toBe("none");
+  });
+});

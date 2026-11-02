@@ -1,5 +1,6 @@
 import { totalAfterDiscount } from "../api/fixtures";
 import type { CatalogProduct, Subscription, SubscriptionItem, SubscriptionStatus } from "../api/types";
+import { addMonths, DAY_MS } from "../lib/dates";
 import { dateAfterSkip } from "./summary";
 
 // Only skipping exists in the API, so every other change is simulated here: a layer of local
@@ -14,8 +15,6 @@ export interface LocalChanges {
   pausedUntil?: string;
   cancelledAt?: string;
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** What the customer sees: the server's subscription with the local changes applied. */
 export function applyChanges(server: Subscription, changes: LocalChanges): Subscription {
@@ -52,9 +51,7 @@ export function withSwap(changes: LocalChanges, shown: Subscription, fromSku: st
 
 /** Deliveries resume the given number of months from today. */
 export function paused(changes: LocalChanges, months: number, now: Date): LocalChanges {
-  const until = new Date(now);
-  until.setMonth(until.getMonth() + months);
-  return { ...changes, status: "paused", pausedUntil: until.toISOString() };
+  return { ...changes, status: "paused", pausedUntil: addMonths(now, months).toISOString() };
 }
 
 /** Resuming or restarting delivers tomorrow, so the customer gets what they just asked for soon. */

@@ -19,6 +19,15 @@ describe("PauseOptions", () => {
   });
 });
 
+describe("PauseOptions with a subset", () => {
+  it("offers only the lengths it is given", async () => {
+    const screen = await render(<PauseOptions options={[2, 3]} onPause={vi.fn()} />);
+
+    await expect.element(screen.getByRole("button", { name: "Pause for 1 month" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button").elements()).toHaveLength(2);
+  });
+});
+
 describe("PauseDialog", () => {
   it("explains the pause, starts on the safe choice and reports the chosen length", async () => {
     const actions = { onPause: vi.fn(), onClose: vi.fn() };

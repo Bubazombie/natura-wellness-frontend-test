@@ -9,8 +9,12 @@ const REPEATED_CONFLICT = 2;
 interface SkipFlowOptions {
   /** The server's subscription, which the API call must be based on. */
   server: Subscription;
-  /** Fetches the latest subscription after a conflict; resolves to whether it worked. */
-  refetch: () => Promise<boolean>;
+  /** Fetches the latest subscription after a conflict; resolves to it, or null if that failed. */
+  refetch: () => Promise<Subscription | null>;
+  /** Whether the latest subscription still has a delivery to skip, with any local changes applied. */
+  canSkip: (latest: Subscription) => boolean;
+  /** Called when the latest version, changed elsewhere, has nothing left to skip (paused or cancelled). */
+  onNothingToSkip: (latest: Subscription) => void;
   /** Called once the skip is done. `simulated` when the server's own status isn't active. */
   onSkipped: (updated: Subscription, simulated: boolean) => void;
 }
@@ -25,7 +29,7 @@ export interface SkipFlow {
   close: () => void;
 }
 
-export function useSkipFlow({ server, refetch, onSkipped }: SkipFlowOptions): SkipFlow {
+export function useSkipFlow({ server, refetch, canSkip, onSkipped, onNothingToSkip }: SkipFlowOptions): SkipFlow {
   const mutation = useSkipMutation();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<SkipStatus>("confirm");
@@ -39,9 +43,18 @@ export function useSkipFlow({ server, refetch, onSkipped }: SkipFlowOptions): Sk
   // Changed elsewhere: show the latest details and ask again, rather than retrying blindly. The
   // dialog stays pending until the latest details are in.
   const showLatestAndAskAgain = async () => {
-    const refreshed = await refetch().catch(() => false);
+    const latest = await refetch().catch(() => null);
+    if (!latest) {
+      setStatus("error");
+      return;
+    }
+    if (!canSkip(latest)) {
+      setOpen(false);
+      onNothingToSkip(latest);
+      return;
+    }
     conflicts.current += 1;
-    setStatus(!refreshed ? "error" : conflicts.current >= REPEATED_CONFLICT ? "repeated-conflict" : "conflict");
+    setStatus(conflicts.current >= REPEATED_CONFLICT ? "repeated-conflict" : "conflict");
   };
 
   const confirm = () => {

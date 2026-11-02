@@ -223,6 +223,57 @@ describe("SubscriptionCard: simulated changes", () => {
     expect(skip).not.toHaveBeenCalled();
   });
 
+  it("the cancel flow starts over each time it opens, even after an offer was accepted", async () => {
+    const screen = await renderLoaded();
+    const openCancelFlow = () => screen.getByRole("button", { name: "Cancel subscription" }).click();
+
+    await openCancelFlow();
+    await screen.getByRole("radio", { name: "I have too much product left" }).click();
+    await screen.getByRole("button", { name: "Continue" }).click();
+    await screen.getByRole("button", { name: /^Deliver every 60 days/ }).click();
+    await openCancelFlow();
+
+    await expect.element(screen.getByRole("dialog", { name: "Before you go" })).toBeVisible();
+  });
+
+  it("after accepting an offer, focus moves to the confirmation, so it is seen even on a phone", async () => {
+    const screen = await renderLoaded();
+
+    await screen.getByRole("button", { name: "Cancel subscription" }).click();
+    await screen.getByRole("radio", { name: "It costs too much" }).click();
+    await screen.getByRole("button", { name: "Continue" }).click();
+    await screen.getByRole("button", { name: /^Get 1 Multivitamin instead of 2/ }).click();
+
+    const confirmation = screen.getByText("Done. You'll get 1 of Multivitamin, 30 tablets in each delivery, for $63.67 per delivery.");
+    await expect.element(confirmation.element().closest("p") ?? confirmation).toHaveFocus();
+  });
+
+  it("a frequency change made on the page is confirmed under the select, and focus stays there", async () => {
+    const screen = await renderLoaded();
+    const select = screen.getByRole("combobox", { name: "Delivery frequency" });
+
+    // A person focuses the select when they use it; selectOptions on its own doesn't.
+    select.element().focus();
+    await select.selectOptions("Every 60 days");
+
+    await expect.element(select).toHaveAccessibleDescription("Your Nov 8 delivery is unchanged. After that, you'll get a delivery every 60 days.");
+    await expect.element(select).toHaveFocus();
+  });
+
+  it("if a conflict turns out to be a pause made elsewhere, the dialog closes and says there's nothing to skip", async () => {
+    const screen = await renderLoaded();
+    skip.mockImplementation(conflict);
+    load.mockResolvedValue({ ...fixtures.paused(), updatedAt: "2026-11-02T17:00:00.000Z" });
+
+    await openSkip(screen);
+    await screen.getByRole("button", { name: "Skip Nov 8 delivery" }).click();
+
+    const message = screen.getByText("Your subscription was changed elsewhere and is now paused, so there's no delivery to skip.");
+    await expect.element(message).toBeVisible();
+    await expect.element(screen.getByRole("dialog")).not.toBeInTheDocument();
+    await expect.element(screen.getByRole("heading", { name: "Your deliveries are paused" })).toBeVisible();
+  });
+
   it("has no WCAG 2.2 AA violations once loaded", async () => {
     const screen = await renderLoaded();
 

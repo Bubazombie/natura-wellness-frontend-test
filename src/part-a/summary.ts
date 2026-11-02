@@ -1,5 +1,6 @@
 import { totalAfterDiscount } from "../api/fixtures";
 import type { Subscription, SubscriptionItem } from "../api/types";
+import { DAY_MS } from "../lib/dates";
 
 export interface PriceSummary {
   subtotalCents: number;
@@ -7,8 +8,6 @@ export interface PriceSummary {
   totalCents: number;
   itemCount: number;
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** When the next delivery would be after skipping one: one interval later, as the API does it. */
 export function dateAfterSkip(nextChargeAt: string, intervalDays: number): string {

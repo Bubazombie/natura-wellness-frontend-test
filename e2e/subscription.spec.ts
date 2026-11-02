@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect as baseExpect, test } from "@playwright/test";
 import { WCAG_AA_TAGS } from "../src/test/a11y";
+
+// Against the real mock API, which waits up to 2.5s per call. The error fixture fails twice (the
+// load retries a 5xx once, after a 1s delay), so its message can take about 6s to appear.
+const expect = baseExpect.configure({ timeout: 12_000 });
 
 const axe = async (page: import("@playwright/test").Page) => (await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()).violations.map((v) => v.id);
 

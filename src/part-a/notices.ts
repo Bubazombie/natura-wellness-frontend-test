@@ -33,3 +33,8 @@ export function statusAnnouncement(after: Subscription): string {
   if (after.status === "cancelled") return "Your subscription is cancelled. You won't be charged again.";
   return `Your subscription is active.${after.nextChargeAt ? ` Your next delivery is ${formatWeekdayDate(after.nextChargeAt)}.` : ""}`;
 }
+
+/** After a conflict, the latest version turned out to be paused or cancelled: there is nothing to skip. */
+export function nothingToSkipNotice(latest: Subscription): string {
+  return `Your subscription was changed elsewhere and is now ${latest.status}, so there's no delivery to skip.`;
+}
