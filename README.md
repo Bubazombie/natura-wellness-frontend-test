@@ -57,6 +57,13 @@ Each decision lists why we made it and the main alternative we didn't pick.
 - **Part B first, then Part A.** Part B is well defined, it proves the tooling and the visual check, and its colors, fonts and radii become the visual language for Part A, which has no design.
   *Not picked:* Part A first. It carries more weight, but we would invent a visual language and then rework it to match the brand.
 
+### App shell
+
+- **A simple branded header with the part switcher**: the "Natura Wellness" wordmark and a labelled `<nav>` of two pill links, the current part in brand green with `aria-current="page"`. Links are 44px tall with 8px between them, so a focused link's ring (2px plus a 2px offset) keeps clear space from the pill beside it, and the gutters match the Part B layout so edges line up. It is the first thing a reviewer sees, so it uses the same tokens as the rest of the app.
+  *Not picked:* the starter's unstyled links.
+- **On phones the links read "Part A" and "Part B"**, so the header stays on one row down to 320px instead of stacking into three. Each link's `aria-label` keeps the full name ("Part A: Subscription page") at every width, and starts with the visible text, as WCAG 2.5.3 (Label in Name) asks. An end-to-end test checks one row and no sideways scroll from 320 to 1440px.
+  *Not picked:* visually hidden text for the rest of the name, which made browsers compute "Part A : Subscription page" with a stray space; or letting the links wrap, which took 137px of a 320px phone screen.
+
 ### Part B: buy box
 
 - **Subscribe is selected by default**, as in the reference.

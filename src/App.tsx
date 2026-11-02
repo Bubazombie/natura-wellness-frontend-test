@@ -1,15 +1,13 @@
+import { AppNav, type Part } from "./AppNav";
 import { SubscriptionCard } from "./part-a/SubscriptionCard";
 import { BuyBox } from "./part-b/BuyBox";
 
-const part = new URLSearchParams(window.location.search).get("part") === "b" ? "b" : "a";
+const part: Part = new URLSearchParams(window.location.search).get("part") === "b" ? "b" : "a";
 
 export function App() {
   return (
     <>
-      <nav style={{ display: "flex", gap: 16, padding: "8px 16px", fontFamily: "Inter, sans-serif", fontSize: 13 }}>
-        <a href="?part=a&fixture=active">Part A: Subscription page</a>
-        <a href="?part=b">Part B: Buy box</a>
-      </nav>
+      <AppNav current={part} />
       <main>{part === "a" ? <SubscriptionCard /> : <BuyBox />}</main>
     </>
   );
