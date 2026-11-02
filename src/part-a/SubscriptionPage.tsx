@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type ReactNode, type Ref } from "react";
 import type { Subscription } from "../api/types";
 import { Button } from "./Button";
 import { FrequencySetting } from "./FrequencySetting";
@@ -22,6 +22,10 @@ interface SubscriptionPageProps extends SubscriptionActions {
   subscription: Subscription;
   /** A confirmation of the last change, such as a skip or a cancellation. */
   notice?: ReactNode;
+  /** Read out after a status change, which the summary card already shows on screen. */
+  announcement?: string;
+  /** The summary card's heading, which receives focus after a status change. */
+  summaryHeadingRef?: Ref<HTMLHeadingElement>;
 }
 
 const card = "rounded-card border border-line-option bg-surface p-5 sm:p-6";
@@ -29,7 +33,7 @@ const sectionTitle = "font-display text-xl font-semibold text-ink";
 const itemsTitle = { active: "In your next delivery", paused: "In your subscription", cancelled: "What you had" } as const;
 
 /** The page for one subscription, in the order customers need it: what's next, what's in it, settings. */
-export function SubscriptionPage({ subscription, notice, ...actions }: SubscriptionPageProps) {
+export function SubscriptionPage({ subscription, notice, announcement, summaryHeadingRef, ...actions }: SubscriptionPageProps) {
   const itemsId = useId();
   const manageId = useId();
   const { status } = subscription;
@@ -38,9 +42,18 @@ export function SubscriptionPage({ subscription, notice, ...actions }: Subscript
     <div>
       <PageHeader status={status} />
       <Notice>{notice}</Notice>
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
 
       <div className="mt-6 space-y-6">
-        <StatusSummary subscription={subscription} onSkip={actions.onSkip} onResume={actions.onResume} onRestart={actions.onRestart} />
+        <StatusSummary
+          subscription={subscription}
+          onSkip={actions.onSkip}
+          onResume={actions.onResume}
+          onRestart={actions.onRestart}
+          headingRef={summaryHeadingRef}
+        />
 
         <section aria-labelledby={itemsId} className={card}>
           <h2 id={itemsId} className={`${sectionTitle} mb-4`}>

@@ -20,7 +20,7 @@ Each decision lists why we made it and the main alternative we didn't pick.
 
 - **Tailwind CSS v4** (via `@tailwindcss/vite`). Design values live as `@theme` tokens in CSS, which suits Part B's exact spacing and colors and gives both parts one shared scale.
   *Not picked:* CSS Modules. No dependency, but more files and no shared token scale.
-- **TanStack Query** for loading the subscription and the skip mutation. It handles request dedupe (React StrictMode mounts twice in development), pending and error state, refetching after a 409, and updating the cache from the skip response. Retries are off for mutations and 4xx errors, because retrying a 409 hides a real conflict and the default retries would add seconds to the error state.
+- **TanStack Query** for loading the subscription and the skip mutation. It handles request dedupe (React StrictMode mounts twice in development), pending and error state, refetching after a 409, and updating the cache from the skip response. Retries are off for mutations and 4xx errors, because retrying a 409 hides a real conflict and the default retries would add seconds to the error state; a load that fails with a 5xx is retried once. Refetching on window focus is off, because nothing else writes to the mock.
   *Not picked:* a hand-written hook with `useReducer`. Fewer dependencies, but we would own every edge case ourselves.
 - **Native `<dialog>` with `showModal()`** for confirmations. The browser gives us an inert background, Escape to close, top-layer rendering and focus return. We set initial focus in code because `autofocus` is unreliable in some browsers.
   *Not picked:* Radix Dialog. Similar behavior, but an extra dependency for what the platform already provides.
@@ -99,6 +99,21 @@ Each decision lists why we made it and the main alternative we didn't pick.
   *Not picked:* a two-step "which product? then which replacement?" flow, which adds a step for no gain at this size; or always swapping the first product, which chose for the customer.
 - **At 375px the page leads with the next delivery**: heading and status (the badge always sits under the title on phones, because "Cancelled" doesn't fit beside it and the badge shouldn't move between states), then a card with the date, the amount and the Skip button, then the items, then delivery frequency, then pause and cancel. Customers come to check or change the next delivery; cancel is last but always visible. Item prices are list prices, with the 15% saving as its own line and the server's total, so the lines always add up (rounding each discounted line separately would be off by a cent).
   *Not picked:* leading with the item list, which pushes the date and amount below the fold.
+- **Changes other than skipping are simulated as a layer of local changes on top of the server's data**, as the brief allows. A successful skip or a refetch replaces the server data underneath and the local changes still apply, so nothing the customer did disappears. The local changes behave like this:
+  - Changing frequency keeps the next delivery's date; the new frequency applies after it.
+  - Resume now and Restart deliver tomorrow.
+  - Pausing for N months resumes N months from today.
+  - Fewer units or a swap recompute the total the same way the server does.
+
+  *Not picked:* writing the simulated changes into the query cache as if the server had returned them, which the next refetch would silently undo.
+- **Known limitations of the simulation:**
+  - The mock API only knows the 30-day interval. With a different frequency chosen, a real skip still goes to the API (for its real result and conflict handling), but the page shows the date the customer's frequency implies, while the mock moves its date by 30 days. A real API would apply the stored frequency.
+  - A subscription resumed or restarted here is still paused or cancelled on the mock server, which would reject a skip, so its skip is simulated too.
+- **Setting changes get a visible notice; status changes don't.** Skip, frequency, quantity and swap show a confirmation such as "Done. Your Nov 8 delivery is skipped. Your next delivery is Dec 8." Pause, resume, restart and cancel change the summary card itself: focus moves to its heading (the button that was used is gone, so closing the dialog would otherwise drop focus on the page) and a visually hidden status region reads out what happened, so nothing is said twice on screen.
+  *Not picked:* a notice for every change, which repeated the card's own words.
+- **Choosing "Skip the Nov 8 delivery" in the cancel flow skips straight away.** That offer already names the delivery and the new date, so asking "Skip your Nov 8 delivery?" again would be a second confirmation of the same choice. The skip dialog still opens to show progress, a conflict or an error.
+  *Not picked:* the normal skip confirmation after the offer, one extra tap for no extra safety.
+- **Once loaded, the page stays on screen if a later refetch fails**, and only the very first load shows the loading and error views.
 - **Buttons that are busy or not available yet use `aria-disabled`, not `disabled`**, like the quantity buttons in Part B: they stay in the Tab order, are announced as unavailable and ignore presses. A button that isn't available yet also looks muted (Continue before a reason is chosen); a busy one keeps its normal look, because its action is happening. Every button is at least 44 by 44px, including the low-emphasis text buttons such as Cancel subscription.
   *Not picked:* the `disabled` attribute, which hides the control from keyboard users while it waits.
 - **Dialogs close with a labelled × button ("Close and keep my subscription") where focus starts**, and with Escape. Focus always starts on the choice that changes nothing, and returns to the button that opened the dialog.

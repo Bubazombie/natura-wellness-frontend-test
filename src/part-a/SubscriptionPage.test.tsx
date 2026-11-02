@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { fixtures } from "../api/fixtures";
@@ -60,10 +61,28 @@ describe("SubscriptionPage", () => {
     await expect.element(screen.getByRole("button", { name: "Restart subscription" })).toBeVisible();
   });
 
-  it("shows a confirmation of the last change in a status region", async () => {
-    const { screen } = await renderPage(fixtures.cancelled(), "Your subscription is cancelled. You won't be charged again.");
+  it("shows a confirmation of the last change in a visible status region", async () => {
+    const { screen } = await renderPage(fixtures.active(), "Done. Your Nov 8 delivery is skipped.");
 
-    await expect.element(screen.getByRole("status")).toHaveTextContent("Your subscription is cancelled. You won't be charged again.");
+    await expect.element(screen.getByRole("status").filter({ hasText: "Done. Your Nov 8 delivery is skipped." })).toBeVisible();
+  });
+
+  it("reads out a status change in a hidden status region, since the card already shows it", async () => {
+    const screen = await render(<SubscriptionPage subscription={fixtures.cancelled()} announcement="Your subscription is cancelled." {...actions()} />);
+    const region = screen.getByRole("status").filter({ hasText: "Your subscription is cancelled." });
+
+    await expect.element(region).toBeInTheDocument();
+    expect(region.element().classList.contains("sr-only")).toBe(true);
+  });
+
+  it("exposes the summary heading, focusable but not in the Tab order, so the page can move focus to it", async () => {
+    const ref = createRef<HTMLHeadingElement>();
+    const screen = await render(<SubscriptionPage subscription={fixtures.cancelled()} summaryHeadingRef={ref} {...actions()} />);
+
+    expect(ref.current?.textContent).toBe("Your subscription is cancelled");
+    expect(ref.current?.tabIndex).toBe(-1);
+    ref.current?.focus();
+    await expect.element(screen.getByRole("heading", { name: "Your subscription is cancelled" })).toHaveFocus();
   });
 
   it("has no WCAG 2.2 AA violations in any status", async () => {
