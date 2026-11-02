@@ -74,12 +74,19 @@ describe("BuyBox", () => {
     const decrease = screen.getByRole("button", { name: "Decrease quantity" });
     const increase = screen.getByRole("button", { name: "Increase quantity" });
 
-    await expect.element(decrease).toBeDisabled();
-    for (let i = 1; i < MAX_QUANTITY; i++) await increase.click();
+    const quantity = screen.getByRole("textbox", { name: "Quantity" });
 
-    await expect.element(screen.getByRole("textbox", { name: "Quantity" })).toHaveValue(String(MAX_QUANTITY));
-    await expect.element(increase).toBeDisabled();
-    await expect.element(decrease).toBeEnabled();
+    await expect.element(decrease).toHaveAttribute("aria-disabled", "true");
+    // force: Playwright treats aria-disabled as disabled and would wait; a real user can still click it.
+    await decrease.click({ force: true });
+    await expect.element(quantity).toHaveValue("1");
+
+    for (let i = 1; i < MAX_QUANTITY; i++) await increase.click();
+    await expect.element(quantity).toHaveValue(String(MAX_QUANTITY));
+    await expect.element(increase).toHaveAttribute("aria-disabled", "true");
+    await increase.click({ force: true });
+    await expect.element(quantity).toHaveValue(String(MAX_QUANTITY));
+    await expect.element(decrease).toHaveAttribute("aria-disabled", "false");
   });
 
   it("has no WCAG 2.2 AA violations, including color contrast, in both purchase states", async () => {

@@ -67,14 +67,23 @@ Each decision lists why we made it and the main alternative we didn't pick.
   *Not picked:* rewording it for one-time purchases, which adds copy the design doesn't have.
 - **The fine print reflects quantity and frequency**, for example "renews every 60 days at $50.92" for 2 units, because auto-renewal laws require stating what will actually be charged and how often. The Add to cart button shows the total too, while prices inside the cards stay per unit.
   *Not picked:* a static fine print, which would misstate the charge.
-- **Quantity goes from 1 to 10.** Minus is disabled at 1 and plus at 10. The number in the middle is an editable, labelled input. The maximum of 10 is a product call, not a standard.
+- **Quantity goes from 1 to 10.** Minus is unavailable at 1 and plus at 10. The number in the middle is an editable, labelled input. The maximum of 10 is a product call, not a standard.
   *Not picked:* no maximum, which allows accidental bulk orders.
+- **At a limit, the minus or plus button uses `aria-disabled`, not `disabled`.** It stays in the Tab order, screen readers announce it as unavailable, pressing it does nothing, and it keeps the reference's look (the reference shows minus at full strength at quantity 1).
+  *Not picked:* the native `disabled` attribute with a dimmed style. Clearer at a glance, but it drops the button from the Tab order, so keyboard and screen reader users can't discover it, and it departs from the reference.
 - **The "2,316 reviews" link points to `#reviews`**, the usual anchor for a reviews section. The reviews section itself is out of scope for this test.
   *Not picked:* rendering it as plain text, which loses the expected path to reviews.
-- **Below 1024px the layout stacks**: photo on top, details below, like a typical mobile product page. The breakpoint comes from the content, not from device widths: the subscribe row needs about 420px, and at 1024px the details column is 427px with every row still on one line. From 1024 to 1199px the gutters and column gap are 32px and 40px; from 1200px they are the reference's 64px. Checked with no horizontal overflow at 320, 375, 768, 1023, 1024, 1100, 1199, 1200 and 1440px.
-  *Not picked:* stacking only below 1200px, which would show a stretched single column on small laptops and tablets in landscape; or scaling the two columns down to phone widths, which gets cramped.
-- **At very narrow widths, controls wrap instead of squeezing.** Below about 330px the Add to cart button moves to its own full-width row rather than breaking "Add to cart · $25.46" over two lines, and the frequency select moves under its label. Below 1024px the select is 44px tall and the reviews link has a 44px tall hit area, our mobile target; at 1200px the select keeps the reference's 33px.
-  *Not picked:* a smaller font for the button on phones, which hurts legibility of the main action.
+- **Three layouts, and the photo never grows past its 540px in the reference:**
+  - Below 768px, one column capped at 540px: full width on phones, a centered column on larger phones and small tablets.
+  - From 768px, two equal columns with 24px gutters and gap, for tablets and for small or scaled laptops. At 768px that leaves 348px per column, enough to keep Add to cart beside the stepper. A 1280px screen at 150% Windows scaling is about 853px wide and at 125% about 1024px, so these widths are common on desktops, not only on tablets.
+  - From 1024px, the reference's 15:13 columns, with the box capped at 1048px (1072px from 1200px, where the gutters and gap become the reference's 64px), so the photo stops at exactly 540px.
+
+  This follows Shopify's Dawn theme, the reference storefront, which puts media and product info side by side from 750px in equal columns and switches to asymmetric columns on desktop.
+  *Not picked:* stacking everything below 1024px (our first version). It put common laptop widths into the phone layout and stretched the photo to the full page width.
+- **At narrow widths, controls wrap instead of squeezing.** The Add to cart button is never narrower than its label (`min-width: max-content`), so when the label can't fit beside the stepper the button moves to its own full-width row, for any total and any font rendering. The frequency select moves under its label. Below 1024px the select is 44px tall and the reviews link has a 44px tall hit area, our mobile target; at 1200px the select keeps the reference's 33px.
+  *Not picked:* a fixed minimum width (our first version). It was tuned to one price in one browser, and between 348 and 364px the button was too narrow for its label but not narrow enough to wrap, so the price overflowed.
+- **A width sweep guards the layout.** An end-to-end test resizes the page from 320 to 1440px in 2px steps, in Chromium and WebKit, with the default selection and with the widest totals (quantity 10). It fails on any width where text overflows its box, the page scrolls sideways, or the photo card passes 540px. It caught both layout bugs above before they were fixed.
+  *Not picked:* screenshots at a handful of widths, which missed both bugs.
 - **The selected option is drawn with a 1px border plus a 1px inset ring**, so it looks like the reference's 2px border while the content stays exactly where it was. Switching options never shifts the layout.
   *Not picked:* a real 2px border, which moves the content by 1px on every change.
 - **Native controls, styled:** a `<fieldset>` of real radio inputs (so a radio group is one Tab stop and arrow keys change the choice) and a native `<select>` (the platform picker on phones).
@@ -96,7 +105,8 @@ Each decision lists why we made it and the main alternative we didn't pick.
   *Not picked:* the exact reference colors, which would ship known AA failures.
 - **Focus indicators are a 2px brand-green outline with a 2px offset**, so the ring always sits on the surface around a control: 10.95:1 on the page, 11.6:1 on white and 10.64:1 on the selected card. On the dark Add to cart button the offset keeps the ring on the page background rather than green on green. The reference shows no focus state, so this is our design.
   *Not picked:* the browser's default focus ring, which differs between browsers and isn't guaranteed to reach 3:1 on every background.
-- **The rating has the accessible name "Rated 4.8 out of 5"**, so screen readers get the value rather than five star icons.
+- **Screen readers hear the rating as "Rated 4.8 out of 5"**, from visually hidden text around the visible "4.8", rather than five star icons.
+  *Not picked:* `role="img"` with an `aria-label` on the stars, which hides the visible number from assistive technology.
 - **The fine print is built from the current selection** by our own function, because `copy.finePrint` hardcodes "30 days" and "$25.46". The frequency comes from `copy.subscribe.frequencyOptions` and the price from `copy.subscribe.priceCents`, so only the sentence frame is ours. A unit test checks that the default selection (30 days, quantity 1) produces exactly `copy.finePrint`, so the two can't drift apart unnoticed.
   *Not picked:* turning `copy.finePrint` into a function in `copy.ts`. One source, but it rewrites a file the brief provides.
 - **The frequency select sits outside the radio's `<label>`**, because nesting interactive controls inside a label is invalid HTML and confuses assistive technology.

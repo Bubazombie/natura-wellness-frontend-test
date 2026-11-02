@@ -21,11 +21,15 @@ export function BuyBox() {
   const totalCents = orderTotalCents(option, quantity, prices);
 
   return (
-    <div className="px-4 py-8 lg:px-8 lg:py-14 wide:px-16">
-      {/* 15:13 is the reference's 540px photo to 468px details column; the box stacks below lg (1024px). */}
+    <div className="px-4 py-8 md:px-6 md:py-10 lg:px-8 lg:py-14 wide:px-16">
+      {/* The photo card never grows past its 540px in the reference:
+          - below md, one column capped at 540px (full width on phones)
+          - md to lg, two equal columns, as on tablets and small or scaled laptops
+          - from lg, the reference's 15:13 columns (540px photo to 468px details); the box is capped
+            at 540 * 28/15 + gap, which is 1048px with lg's 40px gap and 1072px with wide's 64px gap */}
       <section
         aria-labelledby={titleId}
-        className="mx-auto grid max-w-268 gap-8 lg:grid-cols-[15fr_13fr] lg:gap-10 wide:gap-16"
+        className="mx-auto grid max-w-135 gap-8 md:max-w-none md:grid-cols-2 md:gap-6 lg:max-w-262 lg:grid-cols-[15fr_13fr] lg:gap-10 wide:max-w-268 wide:gap-16"
       >
         {/* The photo sits 20px inside the card edge in the reference: 19px padding plus the 1px border. */}
         <div className="self-start overflow-hidden rounded-card border border-line bg-surface p-4.75">
@@ -42,11 +46,11 @@ export function BuyBox() {
           />
           <hr className="mt-6.75 mb-6 border-line" />
           <PurchaseOptions option={option} onOptionChange={setOption} frequency={frequency} onFrequencyChange={setFrequency} />
-          {/* min-w-44 fits "Add to cart · $25.46" on one line; when it can't sit beside the stepper
-              (below about 330px), the button wraps to its own full-width row. */}
+          {/* min-w-max keeps the button at least as wide as its label for any total, so when the label
+              can't fit beside the stepper the button wraps to its own row instead of overflowing. */}
           <div className="mt-6 flex flex-wrap gap-3">
             <QuantityStepper value={quantity} min={MIN_QUANTITY} max={MAX_QUANTITY} onChange={setQuantity} />
-            <button type="button" className="h-14 min-w-44 flex-1 cursor-pointer rounded-option bg-brand px-4 font-medium whitespace-nowrap text-surface">
+            <button type="button" className="h-14 min-w-max flex-1 cursor-pointer rounded-option bg-brand px-4 font-medium whitespace-nowrap text-surface">
               {/* Real spaces around the hidden dot, so the accessible name reads "Add to cart $25.46". */}
               {copy.addToCart}{" "}
               <span aria-hidden="true" className="mx-2">

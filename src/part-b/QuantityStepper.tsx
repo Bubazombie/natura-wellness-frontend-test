@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { MinusIcon, PlusIcon } from "./icons";
 
 interface QuantityStepperProps {
@@ -8,25 +8,45 @@ interface QuantityStepperProps {
   onChange: (value: number) => void;
 }
 
-const buttonClass =
-  "flex w-11 shrink-0 cursor-pointer items-center justify-center text-ink-muted disabled:cursor-not-allowed disabled:opacity-40";
+interface StepButtonProps {
+  label: string;
+  unavailable: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}
+
+// aria-disabled instead of disabled: the button stays in the Tab order and is announced as
+// unavailable, and it keeps the reference's look at the limits. Pressing it then does nothing.
+function StepButton({ label, unavailable, onPress, children }: StepButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-disabled={unavailable}
+      onClick={() => {
+        if (!unavailable) onPress();
+      }}
+      className="flex w-11 shrink-0 cursor-pointer items-center justify-center text-ink-muted aria-disabled:cursor-not-allowed"
+    >
+      {children}
+    </button>
+  );
+}
 
 export function QuantityStepper({ value, min, max, onChange }: QuantityStepperProps) {
   const inputId = useId();
 
   return (
     <div className="flex h-14 w-32 shrink-0 rounded-option border border-line-control bg-surface">
-      <button
-        type="button"
-        aria-label="Decrease quantity"
-        disabled={value <= min}
-        onClick={() => {
+      <StepButton
+        label="Decrease quantity"
+        unavailable={value <= min}
+        onPress={() => {
           onChange(value - 1);
         }}
-        className={buttonClass}
       >
         <MinusIcon className="size-4" />
-      </button>
+      </StepButton>
       <label htmlFor={inputId} className="sr-only">
         Quantity
       </label>
@@ -37,17 +57,15 @@ export function QuantityStepper({ value, min, max, onChange }: QuantityStepperPr
         readOnly
         className="w-full min-w-0 bg-transparent text-center font-medium"
       />
-      <button
-        type="button"
-        aria-label="Increase quantity"
-        disabled={value >= max}
-        onClick={() => {
+      <StepButton
+        label="Increase quantity"
+        unavailable={value >= max}
+        onPress={() => {
           onChange(value + 1);
         }}
-        className={buttonClass}
       >
         <PlusIcon className="size-4" />
-      </button>
+      </StepButton>
     </div>
   );
 }

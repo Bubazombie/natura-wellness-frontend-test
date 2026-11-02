@@ -41,7 +41,11 @@ test("can be completed with the keyboard alone, with a visible focus ring on eve
   await expectBrandFocusRing(frequency);
   await frequency.selectOption("90 days");
 
-  // Decrease is disabled at quantity 1, so the next stop is the quantity field.
+  // Decrease is unavailable at quantity 1 but stays a Tab stop, and pressing it changes nothing.
+  await page.keyboard.press("Tab");
+  await expectBrandFocusRing(box.getByRole("button", { name: "Decrease quantity" }));
+  await page.keyboard.press("Enter");
+  await expect(box.getByRole("textbox", { name: "Quantity" })).toHaveValue("1");
   await page.keyboard.press("Tab");
   await expectBrandFocusRing(box.getByRole("textbox", { name: "Quantity" }));
   await page.keyboard.press("Tab");
