@@ -7,18 +7,21 @@ import { orderTotalCents, type PurchaseOption } from "./pricing";
 import { ProductSummary } from "./ProductSummary";
 import { PurchaseOptions } from "./PurchaseOptions";
 import { QuantityStepper } from "./QuantityStepper";
+import { useQuantityField } from "./useQuantityField";
 
 export const MIN_QUANTITY = 1;
 export const MAX_QUANTITY = 10;
 
+const QUANTITY_RANGE = { min: MIN_QUANTITY, max: MAX_QUANTITY };
 const prices = { oneTimeCents: copy.oneTime.priceCents, subscribeCents: copy.subscribe.priceCents };
 
 export function BuyBox() {
   const titleId = useId();
+  const quantityMessageId = useId();
   const [option, setOption] = useState<PurchaseOption>("subscribe");
   const [frequency, setFrequency] = useState(copy.subscribe.frequencyOptions[0]);
-  const [quantity, setQuantity] = useState(MIN_QUANTITY);
-  const totalCents = orderTotalCents(option, quantity, prices);
+  const quantity = useQuantityField(QUANTITY_RANGE);
+  const totalCents = orderTotalCents(option, quantity.value, prices);
 
   return (
     <div className="px-4 py-8 md:px-6 md:py-10 lg:px-8 lg:py-14 wide:px-16">
@@ -49,7 +52,7 @@ export function BuyBox() {
           {/* min-w-max keeps the button at least as wide as its label for any total, so when the label
               can't fit beside the stepper the button wraps to its own row instead of overflowing. */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <QuantityStepper value={quantity} min={MIN_QUANTITY} max={MAX_QUANTITY} onChange={setQuantity} />
+            <QuantityStepper field={quantity} describedBy={quantityMessageId} />
             <button type="button" className="h-14 min-w-max flex-1 cursor-pointer rounded-option bg-brand px-4 font-medium whitespace-nowrap text-surface">
               {/* Real spaces around the hidden dot, so the accessible name reads "Add to cart $25.46". */}
               {copy.addToCart}{" "}
@@ -59,6 +62,10 @@ export function BuyBox() {
               {formatPrice(totalCents)}
             </button>
           </div>
+          {/* Always rendered, so screen readers pick up the message when it appears; empty, it takes no space. */}
+          <p id={quantityMessageId} aria-live="polite" className="mt-2 text-sm text-ink empty:mt-0">
+            {quantity.message}
+          </p>
           <ul className="mt-4.5 flex flex-wrap gap-x-6 gap-y-2 text-caption font-medium text-ink-muted">
             {copy.trust.map((item) => (
               <li key={item} className="flex items-center gap-2">

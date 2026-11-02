@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
 import { expectNoAxeViolations } from "../test/axe";
+import { expectCollapsed } from "../test/collapsed";
 import { BuyBox, MAX_QUANTITY } from "./BuyBox";
 import { copy } from "./copy";
 
@@ -19,7 +20,7 @@ describe("BuyBox", () => {
     await expect.element(screen.getByRole("radio", { name: /Subscribe & save 15%/ })).toBeChecked();
     await expect.element(screen.getByRole("radio", { name: /One-time purchase/ })).not.toBeChecked();
     await expect.element(screen.getByRole("combobox", { name: "Delivered every" })).toHaveValue("30 days");
-    await expect.element(screen.getByRole("textbox", { name: "Quantity" })).toHaveValue("1");
+    await expect.element(screen.getByRole("spinbutton", { name: "Quantity" })).toHaveValue("1");
     await expect.element(screen.getByRole("button", { name: "Add to cart $25.46" })).toBeVisible();
     await expect.element(screen.getByText(copy.finePrint)).toBeVisible();
   });
@@ -54,8 +55,8 @@ describe("BuyBox", () => {
     await screen.getByRole("radio", { name: /One-time purchase/ }).click();
 
     await expect.element(screen.getByRole("button", { name: "Add to cart $29.95" })).toBeVisible();
-    await expect.element(screen.getByRole("combobox", { name: "Delivered every" })).not.toBeInTheDocument();
-    await expect.element(screen.getByText(copy.subscribe.perks[0])).not.toBeInTheDocument();
+    await expectCollapsed(screen.getByRole("combobox", { name: "Delivered every" }));
+    await expectCollapsed(screen.getByText(copy.subscribe.perks[0]));
     await expect.element(screen.getByText(/renews every/)).not.toBeInTheDocument();
   });
 
@@ -74,7 +75,7 @@ describe("BuyBox", () => {
     const decrease = screen.getByRole("button", { name: "Decrease quantity" });
     const increase = screen.getByRole("button", { name: "Increase quantity" });
 
-    const quantity = screen.getByRole("textbox", { name: "Quantity" });
+    const quantity = screen.getByRole("spinbutton", { name: "Quantity" });
 
     await expect.element(decrease).toHaveAttribute("aria-disabled", "true");
     // force: Playwright treats aria-disabled as disabled and would wait; a real user can still click it.

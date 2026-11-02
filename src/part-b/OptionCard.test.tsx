@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { expectNoAxeViolations } from "../test/axe";
+import { expectCollapsed } from "../test/collapsed";
 import { OptionCard } from "./OptionCard";
 
 const props = { name: "option", value: "a", label: "Option A", price: "$1.00", details: <p>Extra details</p> };
@@ -21,9 +22,9 @@ describe("OptionCard", () => {
     expect(onSelect).toHaveBeenCalledWith("a");
   });
 
-  it("shows its details only while selected", async () => {
+  it("shows its details only while selected, and collapses them out of reach otherwise", async () => {
     const unchecked = await render(<OptionCard {...props} checked={false} onSelect={vi.fn()} />);
-    await expect.element(unchecked.getByText("Extra details")).not.toBeInTheDocument();
+    await expectCollapsed(unchecked.getByText("Extra details"));
     await unchecked.unmount();
 
     const checked = await render(<OptionCard {...props} checked onSelect={vi.fn()} />);

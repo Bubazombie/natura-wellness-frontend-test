@@ -45,16 +45,16 @@ test("can be completed with the keyboard alone, with a visible focus ring on eve
   await page.keyboard.press("Tab");
   await expectBrandFocusRing(box.getByRole("button", { name: "Decrease quantity" }));
   await page.keyboard.press("Enter");
-  await expect(box.getByRole("textbox", { name: "Quantity" })).toHaveValue("1");
+  await expect(box.getByRole("spinbutton", { name: "Quantity" })).toHaveValue("1");
   await page.keyboard.press("Tab");
-  await expectBrandFocusRing(box.getByRole("textbox", { name: "Quantity" }));
+  await expectBrandFocusRing(box.getByRole("spinbutton", { name: "Quantity" }));
   await page.keyboard.press("Tab");
   const increase = box.getByRole("button", { name: "Increase quantity" });
   await expectBrandFocusRing(increase);
   await page.keyboard.press("Enter");
   await page.keyboard.press("Space");
 
-  await expect(box.getByRole("textbox", { name: "Quantity" })).toHaveValue("3");
+  await expect(box.getByRole("spinbutton", { name: "Quantity" })).toHaveValue("3");
   await expect(addToCart).toHaveAccessibleName("Add to cart $76.38");
   await expect(box.getByText("Your subscription renews every 90 days at $76.38 until you cancel.", { exact: false })).toBeVisible();
 
@@ -83,4 +83,59 @@ test("shows the focus ring on the reviews link when reached with the keyboard", 
     await page.keyboard.press("Tab");
   }
   await expectBrandFocusRing(link);
+});
+
+test("collapsing the subscription details takes them out of the Tab order, and expanding brings them back", async ({ page }) => {
+  const box = page.getByRole("region", { name: "Vitamin D" });
+  const oneTime = box.getByRole("radio", { name: /One-time/ });
+  const frequency = box.getByRole("combobox", { name: "Delivered every" });
+
+  await oneTime.check();
+  await expect(frequency).toBeHidden();
+  await oneTime.focus();
+  await page.keyboard.press("Tab");
+  await expect(box.getByRole("button", { name: "Decrease quantity" })).toBeFocused();
+
+  await box.getByRole("radio", { name: /Subscribe/ }).check();
+  await expect(frequency).toBeVisible();
+  await box.getByRole("radio", { name: /Subscribe/ }).focus();
+  await page.keyboard.press("Tab");
+  await expect(frequency).toBeFocused();
+});
+
+for (const [motion, animated] of [["no-preference", "grid-template-rows, margin"], ["reduce", "none"]] as const) {
+  test(`collapse animation respects prefers-reduced-motion: ${motion}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: motion });
+
+    // transition-property decides whether anything animates; the duration is reported either way.
+    const property = await page
+      .getByText("Free shipping on every order")
+      .evaluate((el) => getComputedStyle(el.closest("[class*=grid-rows-]") ?? el).transitionProperty);
+    expect(property).toBe(animated);
+  });
+}
+
+test("typing a quantity updates the total, and an out-of-range entry is corrected with a message", async ({ page }) => {
+  const box = page.getByRole("region", { name: "Vitamin D" });
+  const quantity = box.getByRole("spinbutton", { name: "Quantity" });
+  const addToCart = box.getByRole("button", { name: /Add to cart/ });
+
+  await quantity.fill("3");
+  await expect(addToCart).toHaveAccessibleName("Add to cart $76.38");
+
+  await quantity.fill("25");
+  await page.keyboard.press("Tab");
+  await expect(quantity).toHaveValue("10");
+  await expect(box.getByText("You can order up to 10 at a time.")).toBeVisible();
+  await expect(quantity).toHaveAccessibleDescription("You can order up to 10 at a time.");
+  await expect(addToCart).toHaveAccessibleName("Add to cart $254.60");
+
+  await quantity.fill("");
+  await page.keyboard.press("Enter");
+  await expect(quantity).toHaveValue("10");
+  await expect(box.getByText("Enter a quantity from 1 to 10.")).toBeVisible();
+
+  await quantity.press("Home");
+  await expect(quantity).toHaveValue("1");
+  await expect(box.getByText("Enter a quantity from 1 to 10.")).toBeHidden();
 });

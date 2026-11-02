@@ -63,7 +63,7 @@ test("default selection fits at every width from 320 to 1440px", async ({ page }
 });
 
 test("the widest prices (quantity 10) fit at every width", async ({ page }) => {
-  const quantity = page.getByRole("textbox", { name: "Quantity" });
+  const quantity = page.getByRole("spinbutton", { name: "Quantity" });
   while ((await quantity.inputValue()) !== "10") await page.getByRole("button", { name: "Increase quantity" }).click();
 
   expect(await sweep(page)).toEqual([]);

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { expectNoAxeViolations } from "../test/axe";
+import { expectCollapsed } from "../test/collapsed";
 import { PurchaseOptions } from "./PurchaseOptions";
 
 const handlers = () => ({ onOptionChange: vi.fn(), onFrequencyChange: vi.fn() });
@@ -37,8 +38,8 @@ describe("PurchaseOptions", () => {
   it("shows the frequency and perks only while subscribe is selected", async () => {
     const screen = await render(<PurchaseOptions option="one-time" frequency="30 days" {...handlers()} />);
 
-    await expect.element(screen.getByRole("combobox", { name: "Delivered every" })).not.toBeInTheDocument();
-    await expect.element(screen.getByText("Free shipping on every order")).not.toBeInTheDocument();
+    await expectCollapsed(screen.getByRole("combobox", { name: "Delivered every" }));
+    await expectCollapsed(screen.getByText("Free shipping on every order"));
   });
 
   it("has no WCAG 2.2 AA violations with either option selected", async () => {
