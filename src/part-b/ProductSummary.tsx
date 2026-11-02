@@ -1,4 +1,4 @@
-import { StarIcon } from "./icons";
+import { StarIcon } from "../ui/icons";
 
 const MAX_RATING = 5;
 

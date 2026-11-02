@@ -1,5 +1,5 @@
 import { useId, type KeyboardEvent, type ReactNode } from "react";
-import { MinusIcon, PlusIcon } from "./icons";
+import { MinusIcon, PlusIcon } from "../ui/icons";
 import type { QuantityField } from "./useQuantityField";
 
 interface QuantityStepperProps {

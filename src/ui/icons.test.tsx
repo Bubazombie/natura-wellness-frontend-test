@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
-import { CheckCircleIcon, CheckIcon, ChevronDownIcon, MinusIcon, PlusIcon, StarIcon } from "./icons";
+import { CheckCircleIcon, CheckIcon, ChevronDownIcon, CloseIcon, MinusIcon, PlusIcon, StarIcon } from "./icons";
 
-const icons = { StarIcon, CheckIcon, CheckCircleIcon, ChevronDownIcon, MinusIcon, PlusIcon };
+const icons = { StarIcon, CheckIcon, CheckCircleIcon, ChevronDownIcon, CloseIcon, MinusIcon, PlusIcon };
 
 describe("icons", () => {
   it.each(Object.entries(icons))("%s is hidden from assistive technology and takes a class", async (_, Icon) => {

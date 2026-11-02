@@ -19,6 +19,7 @@
 - Scope: only what the brief or these rules need. Nothing "just in case".
 - Never call something done or working without verifying it (typecheck, lint, tests, build, and the browser for UI). Say what couldn't be verified.
 - Bugs: find the root cause before changing code. No symptom patches.
+- Leave nothing behind: stop every dev server, browser or test runner started for a check before the step ends. Temporary probes or review tests are deleted before the step ends, and review screenshots are kept outside the repo.
 
 ## Engineering
 - Follow SOLID, DRY, KISS and YAGNI. In React that means:

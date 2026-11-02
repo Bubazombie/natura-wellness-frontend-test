@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { formatPrice } from "../lib/money";
 import { copy } from "./copy";
-import { CheckIcon, ChevronDownIcon } from "./icons";
+import { CheckIcon, ChevronDownIcon } from "../ui/icons";
 import { OptionCard } from "./OptionCard";
 import type { PurchaseOption } from "./pricing";
 

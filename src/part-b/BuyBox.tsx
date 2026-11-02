@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { formatPrice } from "../lib/money";
 import { copy } from "./copy";
 import { buildFinePrint } from "./finePrint";
-import { CheckCircleIcon } from "./icons";
+import { CheckCircleIcon } from "../ui/icons";
 import { orderTotalCents, type PurchaseOption } from "./pricing";
 import { ProductSummary } from "./ProductSummary";
 import { PurchaseOptions } from "./PurchaseOptions";
