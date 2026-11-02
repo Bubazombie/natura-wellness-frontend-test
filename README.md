@@ -1,16 +1,55 @@
 # Natura Wellness frontend test
 
-Natura Wellness is a fictional brand made up for this test. The full brief is in `INSTRUCTIONS.md`.
+Two builds for the fictional Natura Wellness supplement store; the brief is in `INSTRUCTIONS.md`.
+
+**Live:** _link to be added after deploying_
+
+## What's built
+
+**Part A: Manage my subscription** (`/?part=a&fixture=active`)
+
+- The next delivery at a glance: date, amount and items, with the 15% saving as its own line.
+- Skip the next delivery through the API, behind a confirmation that states the consequence. A 409 ("changed elsewhere") loads the latest details and asks again; repeated conflicts offer support.
+- Loading, load error, not found, paused and cancelled each have their own state, with a clear next step. Paused and cancelled never offer a skip.
+- The retention feature: a cancel flow that asks why and offers one alternative for that reason (skip or deliver less often, lower the cost, swap a product, or pause). Cancelling takes two taps at minimum.
+- Changes other than skipping are simulated in local state on top of the server data, as the brief allows.
+
+Test cases: `?fixture=active|paused|cancelled|error` (anything else is "not found"), plus `&conflict=always` or `&conflict=never` to control the 409.
+
+**Part B: Buy box** (`/?part=b`)
+
+- Matches `public/reference/buy-box.png` at 1200px: every row within 1px and 0.98% of pixels different in Chromium on Windows (font rasterization and photo resampling), checked automatically.
+- Purchase option, delivery frequency and quantity all work; the prices, the Add to cart total and the renewal fine print stay in step.
+- Three layouts from 320px to large desktop, with the photo never larger than in the reference.
+
+## Run it
 
 ```
 npm install
 npm run dev
 ```
 
-- **Part A:** `src/part-a/SubscriptionCard.tsx`. Open `/?part=a&fixture=active`. The mock API is in `src/api/`; switch cases with `?fixture=active|paused|cancelled|error` and force the "changed elsewhere" error with `&conflict=always`. Other products are in `catalog` in `src/api/fixtures.ts`.
-- **Part B:** `src/part-b/BuyBox.tsx`. Open `/?part=b`. Match `public/reference/buy-box.png`, which is a 2x screenshot of a 1200px-wide browser window. Copy is in `src/part-b/copy.ts`; Fraunces and Inter are loaded in `index.html`.
+Then open `http://localhost:5173/?part=a&fixture=active` or `http://localhost:5173/?part=b`.
 
-You can add any libraries you like.
+## Test it
+
+```
+npx playwright install chromium webkit   # once, for the browser tests
+npm run check                            # typecheck, lint, Vitest and Playwright (about 2.5 minutes)
+```
+
+- `npm run test`: Vitest. Pure logic runs in Node (`*.test.ts`); components and flows run in real Chromium (`*.test.tsx`), with axe-core checking WCAG 2.2 AA, color contrast included.
+- `npm run test:e2e`: Playwright, against a server it starts on port 4174. Desktop and phones (375px and 320px) in Chromium, and iPhone presets in WebKit. It also runs width sweeps from 320 to 1440px and the Part B visual comparison.
+- `npx playwright test --project=visual`: only the Part B comparison; `actual.png`, `expected.png` and `diff.png` are saved in `test-results/`.
+
+## Where things live
+
+- `src/api/`: the mock API and fixtures from the brief, unchanged.
+- `src/part-a/`: Part A. `SubscriptionCard.tsx` loads the data and holds the state; the rest are presentational components and pure logic (`localChanges.ts`, `swaps.ts`, `summary.ts`, `notices.ts`).
+- `src/part-b/`: Part B. `BuyBox.tsx` composes the box; `copy.ts` is the brief's copy, unchanged.
+- `src/ui/`, `src/lib/`: icons, and price and date formatting shared by both parts.
+- `src/index.css`: design tokens measured from the reference (Tailwind CSS v4 `@theme`).
+- `e2e/`: Playwright specs; `e2e/support/` has the width sweep helper.
 
 ## Decisions and trade-offs
 
@@ -73,9 +112,11 @@ Each decision lists why we made it and the main alternative we didn't pick.
   | Too much product left (38%) | Skip the next delivery first (the one change the API supports), or deliver less often (every 60 or 90 days) |
   | It costs too much (24%) | Lower the cost: fewer units or less frequent delivery, with the new price shown before choosing |
   | Trying a different product (15%) | Swap one product for another from the catalog: one tap per "Swap Multivitamin for Magnesium", so the customer picks which product to replace |
-  | Didn't see results (12%), other (11%) | Pause for 1, 2 or 3 months |
+  | Didn't see results (12%), other (11%) | Pause for 1, 2 or 3 months; if already paused, a longer pause, offering only lengths that end later than the current one |
 
-  Cancelling takes two taps at minimum (Cancel, then Cancel subscription on the first step); giving a reason adds one step, the matching offer, which also has Cancel subscription. The reason is optional. When it is done, the page confirms what happened and offers Restart, with no extra "are you sure?" step. The confirmation is the cancelled card itself ("Your subscription is cancelled. You cancelled today. You won't be charged again."), not a separate notice repeating the same words; when the dialog closes, focus moves to that card's heading, so screen reader users hear it too.
+  "Less often" offers only use the frequencies the page itself offers (30, 60 or 90 days), and only longer ones, so an offer can never set a frequency the page can't show.
+
+  Cancelling takes two taps at minimum (Cancel, then Cancel subscription on the first step); giving a reason adds one step, the matching offer, which also has Cancel subscription. The reason is optional and only picks the offer; it isn't stored, because nothing in this build would use it (a real one would send it to analytics). When it is done, the page confirms what happened and offers Restart, with no extra "are you sure?" step. The confirmation is the cancelled card itself ("Your subscription is cancelled. You cancelled today. You won't be charged again."), not a separate notice repeating the same words; when the dialog closes, focus moves to that card's heading, so screen reader users hear it too.
   *Not picked:* a success notice above the cancelled card, which said "Your subscription is cancelled" twice.
   *Not picked:* only a delivery frequency control on the page. Simpler, and the same control is on the page anyway, but it does nothing for the other 62% at the moment they decide to leave.
 - **Skipping asks for confirmation in a dialog that states the consequence**: "Skip your Nov 8 delivery?", "You won't be charged $101.87 on Nov 8. Your next delivery will be Dec 8.", with the buttons "Skip Nov 8 delivery" and "Keep it", and focus starting on "Keep it". NN/g recommends confirming only consequential actions, restating the consequence and naming the action on the buttons. The API has no way to undo a skip, which is why this confirms instead of offering undo. While the skip is in flight the dialog can't be closed: "Keep it" is unavailable and Escape is ignored until the result is in, because closing it would look like keeping the delivery while the skip still goes through.
@@ -111,6 +152,9 @@ Each decision lists why we made it and the main alternative we didn't pick.
   - A subscription resumed or restarted here is still paused or cancelled on the mock server, which would reject a skip, so its skip is simulated too.
 - **Setting changes get a visible notice; status changes don't.** Skip, frequency, quantity and swap show a confirmation such as "Done. Your Nov 8 delivery is skipped. Your next delivery is Dec 8." Pause, resume, restart and cancel change the summary card itself: focus moves to its heading (the button that was used is gone, so closing the dialog would otherwise drop focus on the page) and a visually hidden status region reads out what happened, so nothing is said twice on screen.
   *Not picked:* a notice for every change, which repeated the card's own words.
+- **A confirmation appears where the customer is looking.** A frequency change made with the select is confirmed right under it, and focus stays on the select. A change made in a dialog moves focus to the notice at the top and scrolls it into view (explicitly, because WebKit focuses without scrolling), so on a phone it is never left off-screen above the button that opened the dialog. While a skip is in flight, a status region announces "Skipping your delivery...", since focus stays on Keep it.
+  *Not picked:* one notice at the top for everything, which an independent review found off-screen on a 375px phone after a change near the bottom of the page.
+- **A conflict can reveal that the subscription was paused or cancelled elsewhere.** Then the skip dialog closes and the page says so ("...is now paused, so there's no delivery to skip.") instead of asking again about a delivery that no longer exists.
 - **Choosing "Skip the Nov 8 delivery" in the cancel flow skips straight away.** That offer already names the delivery and the new date, so asking "Skip your Nov 8 delivery?" again would be a second confirmation of the same choice. The skip dialog still opens to show progress, a conflict or an error.
   *Not picked:* the normal skip confirmation after the offer, one extra tap for no extra safety.
 - **Once loaded, the page stays on screen if a later refetch fails**, and only the very first load shows the loading and error views.
@@ -158,7 +202,7 @@ Each decision lists why we made it and the main alternative we didn't pick.
   *Not picked:* custom ARIA radio cards and listboxes, which re-implement keyboard and screen reader behavior the browser already provides.
 - **Radios show their focus ring on any focus, not only `:focus-visible`.** In WebKit, `:focus-visible` stops matching once arrow keys move between radios, so Safari keyboard users lost the ring; our WebKit tests caught it. The cost is a ring after a mouse click on a radio in other browsers.
   *Not picked:* `:focus-visible` everywhere, which fails WCAG 2.4.7 in Safari.
-- **The visual check allows 1.5% differing pixels.** The finished build measures 1.25% in Chromium on Windows, and that remainder is glyph rasterization and photo resampling (the reference was most likely rendered on macOS). Every row was also measured to within 1px of the reference during the build.
+- **The visual check allows 1.5% differing pixels.** The finished build measures 0.98% in Chromium on Windows, and that remainder is glyph rasterization and photo resampling (the reference was most likely rendered on macOS). Every row was also measured to within 1px of the reference during the build.
   *Not picked:* a 0% target, which no cross-platform render can reach.
 - **Three reference colors are darkened slightly to meet WCAG 2.2 AA contrast.** Each is the smallest same-hue darkening that passes, with a small margin:
 
@@ -178,3 +222,20 @@ Each decision lists why we made it and the main alternative we didn't pick.
 - **The fine print is built from the current selection** by our own function, because `copy.finePrint` hardcodes "30 days" and "$25.46". The frequency comes from `copy.subscribe.frequencyOptions` and the price from `copy.subscribe.priceCents`, so only the sentence frame is ours. A unit test checks that the default selection (30 days, quantity 1) produces exactly `copy.finePrint`, so the two can't drift apart unnoticed.
   *Not picked:* turning `copy.finePrint` into a function in `copy.ts`. One source, but it rewrites a file the brief provides.
 - **The frequency select sits outside the radio's `<label>`**, because nesting interactive controls inside a label is invalid HTML and confuses assistive technology.
+
+## How I used AI
+
+- I built this in Claude Code. I made the product and design decisions; Claude researched the options, implemented them and ran the checks, one step at a time, waiting for my approval between steps. The full, unedited conversation is in `docs/ai-conversation.md`.
+- I used a separate Claude chat as a second reviewer, to improve my prompts and to check outputs before approving them (for example the Part B decisions on the collapsed card and the fine print).
+- `CLAUDE.md` set the working rules: research before each decision, a reason and an alternative for each choice, tests in the same step as the code and seen failing once, root causes instead of patches, WCAG 2.2 AA, and no AI attribution in the code or commits.
+- An independent reviewer agent, with no access to the conversation, checked the finished work against the brief and `CLAUDE.md`.
+
+Moments where the work was checked and corrected:
+
+- **The 1024px breakpoint.** The first Part B layout stacked everything below 1024px. Reviewing it in the browser, I saw the photo grow to full width and noted that a 1280px laptop at 125% or 150% Windows scaling falls in that range. After research into Shopify's Dawn theme it became three layouts, and a width sweep test from 320 to 1440px now fails if the photo grows past its reference size.
+- **The overflowing price.** Around 350 to 400px, "$25.46" spilled out of the Add to cart button. The root cause was a fixed minimum width tuned to one price; it became `min-width: max-content`. The new width sweep failed on the old build before the fix, as it should.
+- **The nav focus ring.** A focused link's ring touched the active pill next to it (a 4px gap and a 4px ring). The gap was increased, and a test now measures the clear space.
+- **The bundle in the swap offer.** The first swap offer replaced Vitamin D without asking, and offered the Daily Essentials Bundle, which already contains it. It now lists each swap as its own choice and never offers a bundle that contains the product being replaced.
+- **Checks that could pass without testing anything.** Component tests were first running without the app's CSS, so axe was checking contrast against unstyled defaults; the axe helper's failure message hid which rule failed. Both were caught by making each new check fail once before trusting it.
+- **Browser differences.** WebKit tests showed that Safari drops the focus ring when arrow keys move between radio buttons, so radios show the ring on any focus.
+- **The independent review.** It found state bugs that the existing tests passed: the cancel flow could set a 120-day frequency the page couldn't show, offered "less often" deliveries that were more often at 90 days, didn't start over after an accepted offer, and offered a pause to an already paused subscription. On a phone, a confirmation could land off-screen. Each fix came with a test that failed without it.
