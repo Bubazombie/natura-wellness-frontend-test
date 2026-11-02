@@ -32,6 +32,16 @@ Each decision lists why we made it and the main alternative we didn't pick.
   *Not picked:* judging the match by eye only. It's faster, but it misses small spacing and color differences.
 - **ESLint** with typescript-eslint, react-hooks and jsx-a11y. The starter has no linter, and these plugins catch type, hook and accessibility mistakes while coding.
   *Not picked:* no linter, relying on code review only.
+- **ESLint 9, not 10.** eslint-plugin-jsx-a11y (6.10.2, the latest) supports ESLint up to 9 only.
+  *Not picked:* ESLint 10 without jsx-a11y, which loses the accessibility lint rules.
+- **The starter's Vite 7 and TypeScript 5.8 stay as they are.** Every tool we added supports them, and upgrading would add changes the brief doesn't need.
+  *Not picked:* upgrading to Vite 8 and TypeScript 7.
+- **Tests run with the en-US locale and the America/New_York timezone**, set once in `test-env.ts` for Vitest and Playwright. A non-UTC zone with daylight saving time catches code that silently assumes UTC, such as a charge date shifting by a day.
+  *Not picked:* UTC, which hides those bugs.
+- **End-to-end tests run against the Vite dev server.** It starts in about a second and runs the same code; the production build is still checked by `npm run build`.
+  *Not picked:* `vite preview` of the production build. Closer to the deployed site, but every run would need a full build first.
+- **`src/api` is excluded from lint.** It is the given contract (see below), so lint errors there aren't something we can act on. Our code is still type-checked against its types.
+  *Not picked:* linting it and editing the starter to satisfy the rules.
 - **No MSW.** The mock API already runs in the browser, so tests mock the module directly.
   *Not picked:* MSW request mocking, which is useful for real HTTP but adds a layer we don't need here.
 - **`src/api/*` and `src/part-b/copy.ts` stay untouched.** They are the given contract, so we adapt to them rather than change them.
@@ -59,5 +69,6 @@ Each decision lists why we made it and the main alternative we didn't pick.
 - **Below 1200px the layout stacks**: photo on top, details below, like a typical mobile product page. The exact breakpoint is chosen during the Part B build.
   *Not picked:* scaling the two-column layout down, which gets cramped on phones.
 - **The rating has the accessible name "Rated 4.8 out of 5"**, so screen readers get the value rather than five star icons.
-- **The fine print is built from the current selection** instead of using the hardcoded `copy.finePrint` string.
+- **The fine print is built from the current selection** by our own function, because `copy.finePrint` hardcodes "30 days" and "$25.46". The frequency comes from `copy.subscribe.frequencyOptions` and the price from `copy.subscribe.priceCents`, so only the sentence frame is ours. A unit test checks that the default selection (30 days, quantity 1) produces exactly `copy.finePrint`, so the two can't drift apart unnoticed.
+  *Not picked:* turning `copy.finePrint` into a function in `copy.ts`. One source, but it rewrites a file the brief provides.
 - **The frequency select sits outside the radio's `<label>`**, because nesting interactive controls inside a label is invalid HTML and confuses assistive technology.

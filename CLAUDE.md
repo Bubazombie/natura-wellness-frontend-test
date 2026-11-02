@@ -39,7 +39,10 @@
 ## Testing
 - Every change ships with every test that makes sense for it, in the same step: unit tests (Node) for logic, component and integration tests (Vitest browser mode) for components and user flows, axe-core checks in component tests, Playwright e2e including 375px with @axe-core/playwright.
 - Cover edge cases: slow responses, errors, 409, items without an image, keyboard-only use.
-- Keep tests deterministic: pin `conflict=never|always` or mock Math.random, use fake timers, fix the timezone.
+- Test files sit next to the code they test. `*.test.ts` runs in Node (pure logic); `*.test.tsx` runs in Chromium (components, hooks, flows); `e2e/*.spec.ts` is Playwright.
+- Use `expectNoAxeViolations` from src/test/axe.ts in component tests and `WCAG_AA_TAGS` from src/test/a11y.ts with AxeBuilder in e2e.
+- Keep tests deterministic: pin `conflict=never|always` or mock Math.random, use fake timers. Locale and timezone are pinned in test-env.ts.
+- A new check must be seen failing once (a temporary probe is fine) before it is trusted to pass.
 - After every change, run the whole suite plus typecheck and lint, and report the results unasked.
 - A failing test means stop and fix the root cause. Never delete, skip or weaken a test to make it pass.
 
@@ -53,5 +56,6 @@
 - Before each commit: review the diff against this file, report findings, fix them, then commit.
 
 ## Commands
-- `npm run dev`, `npm run typecheck`, `npm run build`. Test and lint scripts get added here with the tooling.
+- `npm run check` runs typecheck, lint, Vitest and Playwright: the full verification after every change.
+- Individually: `npm run dev`, `npm run typecheck`, `npm run lint`, `npm run test` (Vitest), `npm run test:e2e` (Playwright), `npm run build`.
 - Part A: `/?part=a&fixture=active|paused|cancelled|error`, plus `&conflict=always|never`. Part B: `/?part=b`.
