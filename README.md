@@ -225,7 +225,7 @@ Each decision lists why we made it and the main alternative we didn't pick.
 
 ## How I used AI
 
-- I built this in Claude Code. I made the product and design decisions; Claude researched the options, implemented them and ran the checks, one step at a time, waiting for my approval between steps. The full, unedited conversation is in `docs/ai-conversation.md`.
+- I built this in Claude Code. I made the product and design decisions; Claude researched the options, implemented them and ran the checks, one step at a time, waiting for my approval between steps. The full, unedited conversation is in [`docs/ai-conversation.md`](docs/ai-conversation.md).
 - I used a separate Claude chat as a second reviewer, to improve my prompts and to check outputs before approving them (for example the Part B decisions on the collapsed card and the fine print).
 - `CLAUDE.md` set the working rules: research before each decision, a reason and an alternative for each choice, tests in the same step as the code and seen failing once, root causes instead of patches, WCAG 2.2 AA, and no AI attribution in the code or commits.
 - An independent reviewer agent, with no access to the conversation, checked the finished work against the brief and `CLAUDE.md`.
